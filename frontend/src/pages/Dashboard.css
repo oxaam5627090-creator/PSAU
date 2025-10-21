@@ -1,0 +1,53 @@
+.dashboard {
+  padding: 2rem 4rem;
+  direction: rtl;
+  font-family: 'Tajawal', sans-serif;
+}
+
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2rem;
+}
+
+.primary-btn,
+.secondary-btn {
+  padding: 0.75rem 1.25rem;
+  border-radius: 0.75rem;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+  text-decoration: none;
+  margin-left: 0.75rem;
+}
+
+.primary-btn {
+  background: #2563eb;
+  color: white;
+}
+
+.secondary-btn {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.uploads table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  border-radius: 1rem;
+  overflow: hidden;
+  box-shadow: 0 10px 20px rgba(15, 23, 42, 0.1);
+}
+
+.uploads th,
+.uploads td {
+  padding: 1rem;
+  text-align: right;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.uploads tr:last-child td {
+  border-bottom: none;
+}
