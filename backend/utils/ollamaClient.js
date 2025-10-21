@@ -17,6 +17,7 @@ export async function callOllama(body) {
   return data;
 }
 
+
 export async function streamOllama(body, onEvent) {
   const response = await fetch(`${config.ollama.host}/api/generate`, {
     method: 'POST',

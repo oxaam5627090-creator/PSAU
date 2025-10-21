@@ -1,6 +1,8 @@
 import { pool } from '../db.js';
 import { buildPrompt } from '../utils/promptBuilder.js';
+
 import { streamOllama } from '../utils/ollamaClient.js';
+
 import { summarizeConversation } from '../utils/summarizer.js';
 import { config } from '../config.js';
 
@@ -24,6 +26,7 @@ export async function createChat(req, res) {
       userSchedule: user.schedule,
       userPersonalInfo: user.personal_info,
     });
+
 
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
@@ -59,6 +62,7 @@ export async function createChat(req, res) {
       ]
     );
 
+
     res.write(
       `data: ${JSON.stringify({ done: true, chatId: result.insertId, message: assistantMessage })}\n\n`
     );
@@ -70,6 +74,7 @@ export async function createChat(req, res) {
     }
     res.write(`data: ${JSON.stringify({ error: 'Internal server error' })}\n\n`);
     return res.end();
+
   }
 }
 
@@ -106,6 +111,7 @@ export async function continueChat(req, res) {
       .map((entry) => `${entry.role === 'user' ? 'User' : entry.role === 'assistant' ? 'Assistant' : 'System'}: ${entry.content}`)
       .join('\n');
 
+
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
@@ -128,6 +134,7 @@ export async function continueChat(req, res) {
       }
     );
 
+
     history.push({ role: 'assistant', content: assistantMessage });
 
     const summary = await summarizeConversation(history);
@@ -143,6 +150,7 @@ export async function continueChat(req, res) {
       userId,
     ]);
 
+
     res.write(`data: ${JSON.stringify({ done: true, message: assistantMessage })}\n\n`);
     return res.end();
   } catch (error) {
@@ -152,6 +160,7 @@ export async function continueChat(req, res) {
     }
     res.write(`data: ${JSON.stringify({ error: 'Internal server error' })}\n\n`);
     return res.end();
+
   }
 }
 

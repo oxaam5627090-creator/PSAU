@@ -10,10 +10,12 @@ function Chat() {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+
   const [currentChatId, setCurrentChatId] = useState(chatId);
   const [error, setError] = useState(null);
   const endRef = useRef(null);
   const streamingIndexRef = useRef(null);
+
 
   useEffect(() => {
     if (!localStorage.getItem('token')) {
@@ -22,14 +24,17 @@ function Chat() {
   }, [navigate]);
 
   useEffect(() => {
+
     setCurrentChatId(chatId);
   }, [chatId]);
 
   useEffect(() => {
+
     endRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
   const sendMessage = async () => {
+
     if (!input.trim() || loading) return;
 
     const messageToSend = input.trim();
@@ -171,6 +176,7 @@ function Chat() {
         return updated;
       });
     }
+
   };
 
   return (
@@ -197,11 +203,13 @@ function Chat() {
           onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
         />
         <button onClick={sendMessage} disabled={loading}>
+
           إرسال
         </button>
       </div>
       {loading && <div className="typing-indicator">المساعد يكتب…</div>}
       {error && <div className="error-message">{error}</div>}
+
     </div>
   );
 }

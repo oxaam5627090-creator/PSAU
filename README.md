@@ -124,6 +124,7 @@ Modify `backend/utils/promptBuilder.js` to tweak tone or inject additional conte
 
 Duplicate `.env.example` → `.env` and adjust credentials. Default upload path (`backend/uploads`) is relative to repo root.
 
+
 ## Running Locally on Windows 11
 
 The project is designed to run fully on a Windows workstation that leverages WSL for Linux tooling and either Ollama or LM Studio for the language model runtime. The checklist below walks through a clean setup:
