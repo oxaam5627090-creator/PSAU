@@ -1,6 +1,8 @@
 import { pool } from '../db.js';
 import { buildPrompt } from '../utils/promptBuilder.js';
-import { callOllama } from '../utils/ollamaClient.js';
+
+import { streamOllama } from '../utils/ollamaClient.js';
+
 import { summarizeConversation } from '../utils/summarizer.js';
 import { config } from '../config.js';
 
@@ -25,15 +27,27 @@ export async function createChat(req, res) {
       userPersonalInfo: user.personal_info,
     });
 
+
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    if (typeof res.flushHeaders === 'function') {
+      res.flushHeaders();
+    }
+
     const payload = {
       model: config.ollama.model,
       prompt: `${systemPrompt}\n\nUser: ${message}\nAssistant:`,
-      stream: false,
     };
 
-    const response = await callOllama(payload);
+    let assistantMessage = '';
 
-    const assistantMessage = response.message ?? response.response ?? '';
+    await streamOllama(payload, (event) => {
+      if (event.response) {
+        assistantMessage += event.response;
+        res.write(`data: ${JSON.stringify({ token: event.response })}\n\n`);
+      }
+    });
 
     const [result] = await pool.query(
       'INSERT INTO chats (user_id, messages, summary) VALUES (?, ?, ?)',
@@ -48,13 +62,19 @@ export async function createChat(req, res) {
       ]
     );
 
-    return res.json({
-      chatId: result.insertId,
-      message: assistantMessage,
-    });
+
+    res.write(
+      `data: ${JSON.stringify({ done: true, chatId: result.insertId, message: assistantMessage })}\n\n`
+    );
+    return res.end();
   } catch (error) {
     console.error('createChat error', error);
-    return res.status(500).json({ message: 'Internal server error' });
+    if (!res.headersSent) {
+      return res.status(500).json({ message: 'Internal server error' });
+    }
+    res.write(`data: ${JSON.stringify({ error: 'Internal server error' })}\n\n`);
+    return res.end();
+
   }
 }
 
@@ -91,13 +111,30 @@ export async function continueChat(req, res) {
       .map((entry) => `${entry.role === 'user' ? 'User' : entry.role === 'assistant' ? 'Assistant' : 'System'}: ${entry.content}`)
       .join('\n');
 
-    const response = await callOllama({
-      model: config.ollama.model,
-      prompt: `${prompt}\nAssistant:`,
-      stream: false,
-    });
 
-    const assistantMessage = response.message ?? response.response ?? '';
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    if (typeof res.flushHeaders === 'function') {
+      res.flushHeaders();
+    }
+
+    let assistantMessage = '';
+
+    await streamOllama(
+      {
+        model: config.ollama.model,
+        prompt: `${prompt}\nAssistant:`,
+      },
+      (event) => {
+        if (event.response) {
+          assistantMessage += event.response;
+          res.write(`data: ${JSON.stringify({ token: event.response })}\n\n`);
+        }
+      }
+    );
+
+
     history.push({ role: 'assistant', content: assistantMessage });
 
     const summary = await summarizeConversation(history);
@@ -113,10 +150,17 @@ export async function continueChat(req, res) {
       userId,
     ]);
 
-    return res.json({ message: assistantMessage });
+
+    res.write(`data: ${JSON.stringify({ done: true, message: assistantMessage })}\n\n`);
+    return res.end();
   } catch (error) {
     console.error('continueChat error', error);
-    return res.status(500).json({ message: 'Internal server error' });
+    if (!res.headersSent) {
+      return res.status(500).json({ message: 'Internal server error' });
+    }
+    res.write(`data: ${JSON.stringify({ error: 'Internal server error' })}\n\n`);
+    return res.end();
+
   }
 }
 
