@@ -1,0 +1,146 @@
+:root {
+  font-family: 'Cairo', system-ui, sans-serif;
+  background: #f5f6fa;
+  color: #1d1d1f;
+  direction: rtl;
+}
+
+body, html, #root {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
+a {
+  color: #0066cc;
+  text-decoration: none;
+}
+
+.page {
+  padding: 2rem;
+  min-height: 100vh;
+}
+
+.card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 1.5rem;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.06);
+  margin-bottom: 1.5rem;
+}
+
+.page.login {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.page.login .card {
+  width: 320px;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.page.dashboard header,
+.page.admin header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.page.dashboard .actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.page.dashboard button,
+.page.login button,
+.chat-input button {
+  background: #0066cc;
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  padding: 0.75rem 1.5rem;
+  cursor: pointer;
+}
+
+.chat {
+  display: flex;
+  gap: 1.5rem;
+}
+
+.chat aside {
+  width: 260px;
+}
+
+.chat aside .new-chat {
+  width: 100%;
+  margin-bottom: 1rem;
+}
+
+.chat main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.chat aside ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.chat aside li {
+  background: #fff;
+  border-radius: 12px;
+  padding: 0.75rem;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+.chat aside li.active {
+  border: 2px solid #0066cc;
+}
+
+.messages {
+  flex: 1;
+  overflow-y: auto;
+  background: #fff;
+  border-radius: 16px;
+  padding: 1rem;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.05);
+}
+
+.message {
+  margin-bottom: 1rem;
+  padding: 0.75rem;
+  border-radius: 12px;
+}
+
+.message.user {
+  background: #e8f1ff;
+  text-align: right;
+}
+
+.message.assistant {
+  background: #f4f4f6;
+}
+
+.chat-input {
+  display: flex;
+  gap: 1rem;
+}
+
+.chat-input textarea {
+  flex: 1;
+  min-height: 100px;
+  border-radius: 12px;
+  padding: 1rem;
+  border: 1px solid #d0d0d0;
+  resize: vertical;
+}

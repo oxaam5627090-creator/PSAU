@@ -1,0 +1,14 @@
+node_modules/
+.env
+backend/uploads/*
+!backend/uploads/.gitkeep
+!backend/uploads/tmp/
+backend/uploads/tmp/*
+!backend/uploads/tmp/.gitkeep
+models/base_model/*
+!models/base_model/.gitkeep
+models/fine_tuned/*
+!models/fine_tuned/.gitkeep
+data/university_docs/*
+!data/university_docs/.gitkeep
+.DS_Store

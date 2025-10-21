@@ -1,0 +1,6 @@
+langchain
+pymupdf
+python-docx
+python-pptx
+pytesseract
+Pillow
