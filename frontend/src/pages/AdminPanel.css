@@ -1,0 +1,50 @@
+.admin-panel {
+  padding: 2rem 3rem;
+  direction: rtl;
+  font-family: 'Tajawal', sans-serif;
+  background: #f8fafc;
+  min-height: 100vh;
+}
+
+.admin-panel header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.stats div {
+  background: white;
+  padding: 1.5rem;
+  border-radius: 1rem;
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.08);
+}
+
+.stats span {
+  color: #64748b;
+}
+
+.stats strong {
+  display: block;
+  font-size: 2rem;
+  margin-top: 0.5rem;
+}
+
+section ul {
+  list-style: none;
+  background: white;
+  padding: 1.5rem;
+  border-radius: 1rem;
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.08);
+}
+
+section h3 {
+  margin-bottom: 0.75rem;
+}

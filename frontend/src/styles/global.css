@@ -1,0 +1,21 @@
+body {
+  margin: 0;
+  background: #f8fafc;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+button {
+  font-family: 'Tajawal', sans-serif;
+}
+
+.secondary-btn {
+  background: #e2e8f0;
+  color: #0f172a;
+  padding: 0.6rem 1.2rem;
+  border-radius: 0.75rem;
+  border: none;
+  cursor: pointer;
+}
