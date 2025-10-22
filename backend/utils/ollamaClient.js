@@ -1,7 +1,22 @@
-import fetch from 'node-fetch';
-import { config } from '../config.js';
+const { config } = require('../config');
 
-export async function callOllama(body) {
+let cachedFetch;
+
+async function getFetch() {
+  if (typeof globalThis.fetch === 'function') {
+    return globalThis.fetch.bind(globalThis);
+  }
+
+  if (!cachedFetch) {
+    const mod = await import('node-fetch');
+    cachedFetch = mod.default || mod;
+  }
+
+  return cachedFetch;
+}
+
+async function callOllama(body) {
+  const fetch = await getFetch();
   const response = await fetch(`${config.ollama.host}/api/generate`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -17,8 +32,8 @@ export async function callOllama(body) {
   return data;
 }
 
-
-export async function streamOllama(body, onEvent) {
+async function streamOllama(body, onEvent) {
+  const fetch = await getFetch();
   const response = await fetch(`${config.ollama.host}/api/generate`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -50,3 +65,5 @@ export async function streamOllama(body, onEvent) {
     onEvent(JSON.parse(trimmed));
   }
 }
+
+module.exports = { callOllama, streamOllama };

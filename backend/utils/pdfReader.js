@@ -1,5 +1,7 @@
-import { extractTextFromFile } from './fileExtractor.js';
+const { extractTextFromFile } = require('./fileExtractor');
 
-export function readPdf(path) {
+function readPdf(path) {
   return extractTextFromFile(path, 'pdf');
 }
+
+module.exports = { readPdf };
