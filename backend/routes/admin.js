@@ -1,9 +1,9 @@
-import { Router } from 'express';
-import { authenticate } from '../utils/authMiddleware.js';
-import { getOverview } from '../controllers/adminController.js';
+const { Router } = require('express');
+const { authenticate } = require('../utils/authMiddleware');
+const { getOverview } = require('../controllers/adminController');
 
 const router = Router();
 
 router.get('/overview', authenticate, getOverview);
 
-export default router;
+module.exports = router;

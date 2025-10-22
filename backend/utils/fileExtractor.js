@@ -1,12 +1,9 @@
-import { spawn } from 'child_process';
-import path from 'path';
-import { fileURLToPath } from 'url';
+const { spawn } = require('child_process');
+const path = require('path');
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 const extractorScript = path.resolve(__dirname, 'text_extractor.py');
 
-export function extractTextFromFile(filePath, extension) {
+function extractTextFromFile(filePath, extension) {
   return new Promise((resolve, reject) => {
     const process = spawn('python', [extractorScript, filePath, extension]);
     let data = '';
@@ -29,3 +26,5 @@ export function extractTextFromFile(filePath, extension) {
     });
   });
 }
+
+module.exports = { extractTextFromFile };

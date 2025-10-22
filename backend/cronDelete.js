@@ -1,8 +1,8 @@
-import cron from 'node-cron';
-import fs from 'fs/promises';
-import path from 'path';
-import { pool } from './db.js';
-import { config } from './config.js';
+const cron = require('node-cron');
+const fs = require('fs/promises');
+const path = require('path');
+const { pool } = require('./db');
+const { config } = require('./config');
 
 const ONE_WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 
@@ -27,7 +27,9 @@ cron.schedule('0 * * * *', () => {
   deleteOldFiles().catch((error) => console.error('deleteOldFiles error', error));
 });
 
-export function ensureUploadsDir() {
+function ensureUploadsDir() {
   const dir = path.resolve(config.uploadsDir);
   return fs.mkdir(dir, { recursive: true });
 }
+
+module.exports = { ensureUploadsDir };
