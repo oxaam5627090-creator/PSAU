@@ -1,15 +1,15 @@
-import express from 'express';
-import cors from 'cors';
-import morgan from 'morgan';
-import multer from 'multer';
-import path from 'path';
-import { config } from './config.js';
-import { migrate } from './db.js';
-import { ensureUploadsDir } from './cronDelete.js';
-import authRoutes from './routes/auth.js';
-import chatRoutes from './routes/chat.js';
-import uploadRoutes from './routes/upload.js';
-import adminRoutes from './routes/admin.js';
+const express = require('express');
+const cors = require('cors');
+const morgan = require('morgan');
+const multer = require('multer');
+const path = require('path');
+const { config } = require('./config');
+const { migrate } = require('./db');
+const { ensureUploadsDir } = require('./cronDelete');
+const authRoutes = require('./routes/auth');
+const chatRoutes = require('./routes/chat');
+const uploadRoutes = require('./routes/upload');
+const adminRoutes = require('./routes/admin');
 
 const app = express();
 
@@ -28,7 +28,7 @@ const storage = multer.diskStorage({
   },
 });
 
-export const upload = multer({
+const upload = multer({
   storage,
   limits: { fileSize: config.uploadLimitMb * 1024 * 1024 },
 });
@@ -54,3 +54,5 @@ start().catch((error) => {
   console.error('Failed to start server', error);
   process.exit(1);
 });
+
+module.exports = { app, start, upload };

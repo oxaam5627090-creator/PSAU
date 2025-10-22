@@ -3,7 +3,7 @@ const BASE_PROMPT = `أنت مساعد جامعي سعودي ودود باسم "
 تقدم إجابات مختصرة وواضحة حول الدراسة واللوائح الأكاديمية فقط.
 إذا لم تتوفر لديك معلومة دقيقة فاذكر بأدب: "ما عندي المعلومة الدقيقة، لكن ممكن تبحث في موقع الجامعة."`;
 
-export function buildPrompt({
+function buildPrompt({
   userName,
   userCollege,
   userSchedule,
@@ -30,6 +30,8 @@ export function buildPrompt({
     'التزم بالحديث عن المواضيع الأكاديمية وخدمات الجامعة فقط.',
   ].join('\n');
 }
+
+module.exports = { buildPrompt };
 
 function safeJson(value) {
   if (!value) return null;
