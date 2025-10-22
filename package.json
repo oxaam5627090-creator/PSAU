@@ -6,10 +6,8 @@
     "frontend"
   ],
   "scripts": {
-
-    "dev": "npm --workspace backend run dev",
-    "dev:backend": "npm --workspace backend run dev",
-    "dev:frontend": "npm --workspace frontend run dev"
-
+    "dev": "npm run dev --prefix backend",
+    "dev:backend": "npm run dev --prefix backend",
+    "dev:frontend": "npm run dev --prefix frontend"
   }
 }
