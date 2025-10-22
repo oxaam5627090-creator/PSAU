@@ -1,7 +1,7 @@
-import jwt from 'jsonwebtoken';
-import { config } from '../config.js';
+const jwt = require('jsonwebtoken');
+const { config } = require('../config');
 
-export function authenticate(req, res, next) {
+function authenticate(req, res, next) {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return res.status(401).json({ message: 'Unauthorized' });
@@ -16,3 +16,5 @@ export function authenticate(req, res, next) {
     return res.status(401).json({ message: 'Invalid token' });
   }
 }
+
+module.exports = { authenticate };

@@ -1,9 +1,9 @@
-import bcrypt from 'bcrypt';
-import jwt from 'jsonwebtoken';
-import { pool } from '../db.js';
-import { config } from '../config.js';
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
+const { pool } = require('../db');
+const { config } = require('../config');
 
-export async function register(req, res) {
+async function register(req, res) {
   try {
     const { universityId, name, password, college, schedule } = req.body;
 
@@ -34,7 +34,7 @@ export async function register(req, res) {
   }
 }
 
-export async function login(req, res) {
+async function login(req, res) {
   try {
     const { universityId, password } = req.body;
     if (!universityId || !password) {
@@ -77,3 +77,5 @@ export async function login(req, res) {
     return res.status(500).json({ message: 'Internal server error' });
   }
 }
+
+module.exports = { register, login };

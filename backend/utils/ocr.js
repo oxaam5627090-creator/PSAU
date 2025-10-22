@@ -1,5 +1,7 @@
-import { extractTextFromFile } from './fileExtractor.js';
+const { extractTextFromFile } = require('./fileExtractor');
 
-export function readImage(path) {
+function readImage(path) {
   return extractTextFromFile(path, 'png');
 }
+
+module.exports = { readImage };

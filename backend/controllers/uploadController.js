@@ -1,9 +1,9 @@
-import path from 'path';
-import fs from 'fs/promises';
-import { pool } from '../db.js';
-import { extractTextFromFile } from '../utils/fileExtractor.js';
+const path = require('path');
+const fs = require('fs/promises');
+const { pool } = require('../db');
+const { extractTextFromFile } = require('../utils/fileExtractor');
 
-export async function handleUpload(req, res) {
+async function handleUpload(req, res) {
   try {
     if (!req.file) {
       return res.status(400).json({ message: 'No file uploaded' });
@@ -36,7 +36,7 @@ export async function handleUpload(req, res) {
   }
 }
 
-export async function listUploads(req, res) {
+async function listUploads(req, res) {
   try {
     const { userId } = req.user;
     const [uploads] = await pool.query(
@@ -50,7 +50,7 @@ export async function listUploads(req, res) {
   }
 }
 
-export async function deleteUpload(req, res) {
+async function deleteUpload(req, res) {
   try {
     const { userId } = req.user;
     const { uploadId } = req.params;
@@ -74,3 +74,5 @@ export async function deleteUpload(req, res) {
     return res.status(500).json({ message: 'Internal server error' });
   }
 }
+
+module.exports = { handleUpload, listUploads, deleteUpload };

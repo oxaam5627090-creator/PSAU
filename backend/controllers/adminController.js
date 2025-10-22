@@ -1,6 +1,6 @@
-import { pool } from '../db.js';
+const { pool } = require('../db');
 
-export async function getOverview(req, res) {
+async function getOverview(req, res) {
   try {
     const [[userCount]] = await pool.query('SELECT COUNT(*) as count FROM users');
     const [[chatCount]] = await pool.query('SELECT COUNT(*) as count FROM chats');
@@ -28,3 +28,5 @@ export async function getOverview(req, res) {
     return res.status(500).json({ message: 'Internal server error' });
   }
 }
+
+module.exports = { getOverview };
