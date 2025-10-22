@@ -1,8 +1,8 @@
-import dotenv from 'dotenv';
+const dotenv = require('dotenv');
 
 dotenv.config();
 
-export const config = {
+const config = {
   port: process.env.PORT || 4000,
   jwtSecret: process.env.JWT_SECRET || 'dev-secret',
   db: {
@@ -22,3 +22,5 @@ export const config = {
   enableWebSearch: process.env.ENABLE_WEB_SEARCH === 'true',
   webSearchApiKey: process.env.WEB_SEARCH_API_KEY || '',
 };
+
+module.exports = { config };
