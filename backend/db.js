@@ -1,7 +1,7 @@
-import mysql from 'mysql2/promise';
-import { config } from './config.js';
+const mysql = require('mysql2/promise');
+const { config } = require('./config');
 
-export const pool = mysql.createPool({
+const pool = mysql.createPool({
   host: config.db.host,
   port: config.db.port,
   user: config.db.user,
@@ -12,7 +12,7 @@ export const pool = mysql.createPool({
   queueLimit: 0,
 });
 
-export async function migrate(connection = pool) {
+async function migrate(connection = pool) {
   const createUsers = `
     CREATE TABLE IF NOT EXISTS users (
       id INT AUTO_INCREMENT PRIMARY KEY,
@@ -52,3 +52,5 @@ export async function migrate(connection = pool) {
   await connection.query(createChats);
   await connection.query(createUploads);
 }
+
+module.exports = { pool, migrate };

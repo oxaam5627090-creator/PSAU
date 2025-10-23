@@ -1,12 +1,10 @@
-import { pool } from '../db.js';
-import { buildPrompt } from '../utils/promptBuilder.js';
+const { pool } = require('../db');
+const { buildPrompt } = require('../utils/promptBuilder');
+const { streamOllama } = require('../utils/ollamaClient');
+const { summarizeConversation } = require('../utils/summarizer');
+const { config } = require('../config');
 
-import { streamOllama } from '../utils/ollamaClient.js';
-
-import { summarizeConversation } from '../utils/summarizer.js';
-import { config } from '../config.js';
-
-export async function createChat(req, res) {
+async function createChat(req, res) {
   try {
     const { userId } = req.user;
     const { message, attachments } = req.body;
@@ -78,7 +76,7 @@ export async function createChat(req, res) {
   }
 }
 
-export async function continueChat(req, res) {
+async function continueChat(req, res) {
   try {
     const { chatId } = req.params;
     const { message } = req.body;
@@ -163,6 +161,8 @@ export async function continueChat(req, res) {
 
   }
 }
+
+module.exports = { createChat, continueChat };
 
 function updatePersonalInfo(personalInfo, history) {
   const info = personalInfo ? JSON.parse(personalInfo) : {};
