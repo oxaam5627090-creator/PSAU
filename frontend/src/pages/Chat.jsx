@@ -82,6 +82,7 @@ function Chat() {
       while (true) {
         const { value, done } = await reader.read();
         buffer += decoder.decode(value || new Uint8Array(), { stream: !done });
+        buffer = buffer.replace(/\r\n/g, '\n');
 
         let boundary = buffer.indexOf('\n\n');
         while (boundary !== -1) {
@@ -132,6 +133,7 @@ function Chat() {
         }
 
         if (done) {
+          buffer = buffer.replace(/\r\n/g, '\n');
           const remaining = buffer.trim();
           if (remaining.startsWith('data:')) {
             const payload = JSON.parse(remaining.replace(/^data:\s*/, ''));
