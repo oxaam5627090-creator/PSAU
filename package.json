@@ -6,10 +6,8 @@
     "frontend"
   ],
   "scripts": {
-
-    "dev": "npm --prefix backend run dev",
-    "dev:backend": "npm --prefix backend run dev",
-    "dev:frontend": "npm --prefix frontend run dev"
-
+    "dev": "node scripts/run-dev.js backend",
+    "dev:backend": "node scripts/run-dev.js backend",
+    "dev:frontend": "node scripts/run-dev.js frontend"
   }
 }
