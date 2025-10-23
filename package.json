@@ -1,0 +1,13 @@
+{
+  "name": "psau-monorepo",
+  "private": true,
+  "workspaces": [
+    "backend",
+    "frontend"
+  ],
+  "scripts": {
+    "dev": "node scripts/run-dev.js backend",
+    "dev:backend": "node scripts/run-dev.js backend",
+    "dev:frontend": "node scripts/run-dev.js frontend"
+  }
+}

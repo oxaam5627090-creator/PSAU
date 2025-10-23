@@ -1,7 +1,7 @@
-import { callOllama } from './ollamaClient.js';
-import { config } from '../config.js';
+const { callOllama } = require('./ollamaClient');
+const { config } = require('../config');
 
-export async function summarizeConversation(history) {
+async function summarizeConversation(history) {
   const summaryPrompt = `لخّص المحادثة التالية في نقاط بسيطة باللغة العربية الفصحى مع التركيز على المعلومات المهمة عن الطالب.\n\n${history
     .map((entry) => `${entry.role}: ${entry.content}`)
     .join('\n')}\n\nالخلاصة:`;
@@ -19,3 +19,5 @@ export async function summarizeConversation(history) {
     return '';
   }
 }
+
+module.exports = { summarizeConversation };

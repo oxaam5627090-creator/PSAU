@@ -15,6 +15,81 @@ This repository provides a starter implementation for "دليلك الجامعي
 └── README.md             # This guide
 ```
 
+## Windows 11 Setup (No WSL Required)
+
+You can run the full stack directly on Windows 11 without installing Ubuntu/WSL. The steps below assume PowerShell.
+
+1. **Install prerequisites**
+   - [Node.js 20 LTS or later](https://nodejs.org/) (ships with npm).
+   - [Git for Windows](https://git-scm.com/download/win) to clone the repository.
+   - [MySQL Community Server](https://dev.mysql.com/downloads/mysql/) or MariaDB for the database. Enable TCP access on `127.0.0.1` and note the root credentials.
+   - (Optional) [Python 3.11+ for Windows](https://www.python.org/downloads/windows/) if you plan to run the document-processing helpers.
+
+2. **Clone the repository**
+   ```powershell
+   git clone <your-fork-url> PSAU
+   cd PSAU
+   ```
+
+3. **Set up environment variables**
+   ```powershell
+   copy .env.example .env
+   notepad .env
+   ```
+   Update the MySQL credentials, JWT secret, and Ollama/LM Studio host. Ollama for Windows listens on `http://localhost:11434` by default.
+
+4. **Provision the database**
+   - Create a schema in MySQL Workbench or via PowerShell: `mysql -u root -p -e "CREATE DATABASE saudi_assistant;"`
+   - Import the schema:
+     ```powershell
+     mysql -u <user> -p saudi_assistant < database\schema.sql
+     ```
+
+5. **Install backend dependencies**
+   ```powershell
+   cd backend
+   npm install
+   cd ..
+   ```
+
+6. **Install frontend dependencies**
+   ```powershell
+   cd frontend
+   npm install
+   cd ..
+   ```
+
+7. **(Optional) configure Python helpers**
+   ```powershell
+   python -m venv backend\.venv
+   backend\.venv\Scripts\activate
+   pip install langchain pymupdf python-docx python-pptx pytesseract pillow
+   ```
+   Install Tesseract OCR for Windows if you need image extraction or adjust the packages based on `backend\utils\text_extractor.py`.
+
+8. **Run the backend**
+   ```powershell
+   npm run dev
+   ```
+   The root script proxies to the backend's `nodemon` runner and works on Windows because it delegates through a Node helper instead of Unix shell features.
+
+9. **Run the frontend** (in a new PowerShell window)
+   ```powershell
+   npm run dev:frontend
+   ```
+
+10. **Open the app**
+    - Backend: http://localhost:4000
+    - Frontend (Vite dev server): http://localhost:5173
+
+11. **Confirm Ollama/LM Studio connectivity**
+    - Ollama for Windows automatically exposes `http://localhost:11434`.
+    - For LM Studio, enable the local server and copy its URL into `.env` (`OLLAMA_HOST`).
+
+12. **Log in and test streaming chat**
+    - Seed a user account in MySQL (create a user row manually or via your own SQL script) or register via API.
+    - Sign in on the React app and send a prompt; you should see token streaming instead of a static "جارٍ الرد..." bubble.
+
 ## Backend Overview
 
 * **Authentication** via JWT (student ID + password).
@@ -32,7 +107,7 @@ Key entry points:
 * `backend/utils/` – Ollama client, prompt builder, summarizer, file extractor, JWT middleware
 * `backend/utils/text_extractor.py` – LangChain/Tesseract-powered document parsing utility
 
-Install dependencies with:
+Install dependencies with the Windows instructions above or manually:
 
 ```bash
 cd backend
@@ -111,7 +186,7 @@ Modify `backend/utils/promptBuilder.js` to tweak tone or inject additional conte
 
 ## Deployment Notes
 
-* Designed for Windows 11 with WSL for backend Python tooling; Node/React can run on Windows or WSL.
+* Designed for Windows 11; WSL is optional and no longer required for the Node.js stack.
 * GPU inference via Ollama or LM Studio using GTX 1080 Ti and 24 GB RAM; expect ~1–3 s per response with quantized 3B–7B models.
 * For LAN/public access, configure reverse proxy (e.g., Caddy/NGINX) and HTTPS certificates.
 * Optional Bing/Serper web search can be toggled by `ENABLE_WEB_SEARCH=true` and providing an API key; integrate the logic in `backend/utils/ollamaClient.js` or dedicated module.
@@ -125,9 +200,9 @@ Modify `backend/utils/promptBuilder.js` to tweak tone or inject additional conte
 Duplicate `.env.example` → `.env` and adjust credentials. Default upload path (`backend/uploads`) is relative to repo root.
 
 
-## Running Locally on Windows 11
+## Optional: Windows 11 with WSL
 
-The project is designed to run fully on a Windows workstation that leverages WSL for Linux tooling and either Ollama or LM Studio for the language model runtime. The checklist below walks through a clean setup:
+If you prefer to keep the backend tooling inside Ubuntu on WSL, follow the original workflow below. The Node.js stack also runs natively as described earlier, so WSL is no longer required.
 
 1. **Install WSL** (if you have not already):
    ```powershell

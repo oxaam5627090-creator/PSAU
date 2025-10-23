@@ -1,9 +1,11 @@
-import { extractTextFromFile } from './fileExtractor.js';
+const { extractTextFromFile } = require('./fileExtractor');
 
-export function readPpt(path) {
+function readPpt(path) {
   return extractTextFromFile(path, 'ppt');
 }
 
-export function readPptx(path) {
+function readPptx(path) {
   return extractTextFromFile(path, 'pptx');
 }
+
+module.exports = { readPpt, readPptx };
