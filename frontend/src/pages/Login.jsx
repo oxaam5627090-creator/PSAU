@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import './Login.css';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
@@ -66,6 +66,9 @@ function Login() {
           />
         </label>
         <button type="submit">دخول</button>
+        <p className="secondary-action">
+          طالب جديد؟ <Link to="/register">أنشئ حسابًا الآن</Link>
+        </p>
       </form>
     </div>
   );

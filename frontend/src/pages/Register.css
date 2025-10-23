@@ -1,4 +1,4 @@
-.login-page {
+.register-page {
   min-height: 100vh;
   display: flex;
   align-items: center;
@@ -7,29 +7,29 @@
   font-family: 'Tajawal', sans-serif;
 }
 
-.login-card {
+.register-card {
   background: white;
   padding: 3rem;
   border-radius: 1rem;
   box-shadow: 0 20px 40px rgba(15, 23, 42, 0.2);
-  width: min(90%, 420px);
+  width: min(90%, 480px);
   direction: rtl;
 }
 
-.login-card h1 {
+.register-card h1 {
   margin-bottom: 1.5rem;
   font-size: 1.8rem;
   text-align: center;
   color: #0f172a;
 }
 
-.login-card label {
+.register-card label {
   display: block;
   margin-bottom: 1rem;
   font-weight: 600;
 }
 
-.login-card input {
+.register-card input {
   width: 100%;
   padding: 0.75rem;
   border-radius: 0.5rem;
@@ -37,7 +37,7 @@
   margin-top: 0.5rem;
 }
 
-.login-card button {
+.register-card button {
   width: 100%;
   padding: 0.85rem;
   background: #2563eb;
@@ -48,13 +48,22 @@
   cursor: pointer;
 }
 
-.login-card button:hover {
+.register-card button:hover {
   background: #1d4ed8;
 }
 
 .error {
   background: #fee2e2;
   color: #b91c1c;
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
+.success {
+  background: #dcfce7;
+  color: #047857;
   padding: 0.75rem;
   border-radius: 0.5rem;
   margin-bottom: 1rem;
