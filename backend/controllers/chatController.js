@@ -67,12 +67,12 @@ async function createChat(req, res) {
     return res.end();
   } catch (error) {
     console.error('createChat error', error);
+    const { statusCode, clientMessage } = mapErrorToClientMessage(error);
     if (!res.headersSent) {
-      return res.status(500).json({ message: 'Internal server error' });
+      return res.status(statusCode).json({ message: clientMessage });
     }
-    res.write(`data: ${JSON.stringify({ error: 'Internal server error' })}\n\n`);
+    res.write(`data: ${JSON.stringify({ error: clientMessage })}\n\n`);
     return res.end();
-
   }
 }
 
@@ -153,12 +153,12 @@ async function continueChat(req, res) {
     return res.end();
   } catch (error) {
     console.error('continueChat error', error);
+    const { statusCode, clientMessage } = mapErrorToClientMessage(error);
     if (!res.headersSent) {
-      return res.status(500).json({ message: 'Internal server error' });
+      return res.status(statusCode).json({ message: clientMessage });
     }
-    res.write(`data: ${JSON.stringify({ error: 'Internal server error' })}\n\n`);
+    res.write(`data: ${JSON.stringify({ error: clientMessage })}\n\n`);
     return res.end();
-
   }
 }
 
@@ -176,4 +176,32 @@ function updatePersonalInfo(personalInfo, history) {
   }
 
   return JSON.stringify(info);
+}
+
+function mapErrorToClientMessage(error) {
+  const fallback = {
+    statusCode: 500,
+    clientMessage: 'حدث خطأ داخلي في الخادم. الرجاء المحاولة لاحقًا.',
+  };
+
+  if (!error) {
+    return fallback;
+  }
+
+  if (error.name === 'OllamaError') {
+    const detail = error.details || 'تعذر الاتصال بنموذج Ollama. يرجى التحقق من إعداداته.';
+    return {
+      statusCode: 502,
+      clientMessage: `مشكلة في الاتصال بنموذج Ollama: ${detail}`,
+    };
+  }
+
+  if (typeof error.message === 'string' && error.message.trim()) {
+    return {
+      statusCode: 500,
+      clientMessage: error.message,
+    };
+  }
+
+  return fallback;
 }
