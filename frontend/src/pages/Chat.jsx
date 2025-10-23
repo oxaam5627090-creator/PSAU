@@ -79,6 +79,68 @@ function Chat() {
       const decoder = new TextDecoder('utf-8');
       let buffer = '';
 
+      const processEvent = (eventBlock) => {
+        const normalized = eventBlock.replace(/\r\n?/g, '\n');
+        const lines = normalized.split('\n');
+        let dataPayload = '';
+
+        for (const line of lines) {
+          if (line.startsWith('data:')) {
+            const value = line.slice(5);
+            // Remove one leading space if present per the SSE spec.
+            dataPayload += (value.startsWith(' ') ? value.slice(1) : value) + '\n';
+          }
+        }
+
+        if (!dataPayload) {
+          return;
+        }
+
+        const serialized = dataPayload.endsWith('\n')
+          ? dataPayload.slice(0, -1)
+          : dataPayload;
+
+        const payload = JSON.parse(serialized);
+
+        if (payload.token) {
+          setMessages((prev) => {
+            const updated = [...prev];
+            const idx = streamingIndexRef.current;
+            if (idx !== null && updated[idx]) {
+              updated[idx] = {
+                ...updated[idx],
+                content: (updated[idx].content || '') + payload.token,
+              };
+            }
+            return updated;
+          });
+        }
+
+        if (payload.chatId && !currentChatId) {
+          setCurrentChatId(payload.chatId.toString());
+          navigate(`/chat/${payload.chatId}`, { replace: true });
+        }
+
+        if (payload.error) {
+          throw new Error(payload.error);
+        }
+
+        if (payload.done) {
+          if (payload.message) {
+            setMessages((prev) => {
+              const updated = [...prev];
+              const idx = streamingIndexRef.current;
+              if (idx !== null && updated[idx]) {
+                updated[idx] = { ...updated[idx], content: payload.message };
+              }
+              return updated;
+            });
+          }
+          streamingIndexRef.current = null;
+          setLoading(false);
+        }
+      };
+
       while (true) {
         const { value, done } = await reader.read();
         buffer += decoder.decode(value || new Uint8Array(), { stream: !done });
@@ -86,74 +148,18 @@ function Chat() {
 
         let boundary = buffer.indexOf('\n\n');
         while (boundary !== -1) {
-          const chunk = buffer.slice(0, boundary).trim();
+          const chunk = buffer.slice(0, boundary);
           buffer = buffer.slice(boundary + 2);
-          if (chunk.startsWith('data:')) {
-            try {
-              const payload = JSON.parse(chunk.replace(/^data:\s*/, ''));
-              if (payload.token) {
-                setMessages((prev) => {
-                  const updated = [...prev];
-                  const idx = streamingIndexRef.current;
-                  if (idx !== null && updated[idx]) {
-                    updated[idx] = {
-                      ...updated[idx],
-                      content: (updated[idx].content || '') + payload.token,
-                    };
-                  }
-                  return updated;
-                });
-              }
-              if (payload.chatId && !currentChatId) {
-                setCurrentChatId(payload.chatId.toString());
-                navigate(`/chat/${payload.chatId}`, { replace: true });
-              }
-              if (payload.error) {
-                throw new Error(payload.error);
-              }
-              if (payload.done) {
-                if (payload.message) {
-                  setMessages((prev) => {
-                    const updated = [...prev];
-                    const idx = streamingIndexRef.current;
-                    if (idx !== null && updated[idx]) {
-                      updated[idx] = { ...updated[idx], content: payload.message };
-                    }
-                    return updated;
-                  });
-                }
-                streamingIndexRef.current = null;
-                setLoading(false);
-              }
-            } catch (err) {
-              throw err;
-            }
+          if (chunk.trim()) {
+            processEvent(chunk);
           }
           boundary = buffer.indexOf('\n\n');
         }
 
         if (done) {
-          buffer = buffer.replace(/\r\n/g, '\n');
           const remaining = buffer.trim();
-          if (remaining.startsWith('data:')) {
-            const payload = JSON.parse(remaining.replace(/^data:\s*/, ''));
-            if (payload.error) {
-              throw new Error(payload.error);
-            }
-            if (payload.done) {
-              if (payload.message) {
-                setMessages((prev) => {
-                  const updated = [...prev];
-                  const idx = streamingIndexRef.current;
-                  if (idx !== null && updated[idx]) {
-                    updated[idx] = { ...updated[idx], content: payload.message };
-                  }
-                  return updated;
-                });
-              }
-              streamingIndexRef.current = null;
-              setLoading(false);
-            }
+          if (remaining) {
+            processEvent(remaining);
           }
           break;
         }
