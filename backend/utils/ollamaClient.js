@@ -126,6 +126,17 @@ async function streamOllama(body, onEvent) {
         continue;
       }
 
+      if (payloadText === '[DONE]') {
+        onEvent({ done: true });
+        continue;
+      }
+
+      if (!/^[\[{]/.test(payloadText)) {
+        console.warn('Ignoring non-JSON Ollama SSE payload:', payloadText);
+        continue;
+      }
+
+
       try {
         onEvent(JSON.parse(payloadText));
       } catch (error) {

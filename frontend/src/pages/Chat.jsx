@@ -83,7 +83,6 @@ function Chat() {
         const lines = eventBlock.split('\n');
         const dataLines = [];
 
-
         for (const rawLine of lines) {
           const line = rawLine.trimEnd();
 
@@ -104,7 +103,7 @@ function Chat() {
           return;
         }
 
-        const payloadText = dataLines.join('\n');
+        const payloadText = dataLines.join('\n').trim();
 
         if (payloadText === '[DONE]') {
           streamingIndexRef.current = null;
@@ -114,6 +113,11 @@ function Chat() {
 
         let payload;
         try {
+          if (!payloadText || !/^[\[{]/.test(payloadText)) {
+            console.warn('Ignoring non-JSON SSE payload:', payloadText);
+            return;
+          }
+
           payload = JSON.parse(payloadText);
         } catch (parseError) {
           console.warn('Ignoring malformed SSE payload:', payloadText, parseError);
