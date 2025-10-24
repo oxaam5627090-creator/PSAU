@@ -83,6 +83,7 @@ function Chat() {
         const lines = eventBlock.split('\n');
         const dataLines = [];
 
+
         for (const rawLine of lines) {
           const line = rawLine.trimEnd();
 
