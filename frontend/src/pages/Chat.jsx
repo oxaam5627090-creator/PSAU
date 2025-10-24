@@ -80,27 +80,45 @@ function Chat() {
       let buffer = '';
 
       const processEvent = (eventBlock) => {
-        const normalized = eventBlock.replace(/\r\n?/g, '\n');
-        const lines = normalized.split('\n');
-        let dataPayload = '';
 
-        for (const line of lines) {
+        const lines = eventBlock.split('\n');
+        const dataLines = [];
+
+        for (const rawLine of lines) {
+          const line = rawLine.trimEnd();
+
+          if (!line || line.startsWith(':')) {
+            continue;
+          }
+
           if (line.startsWith('data:')) {
-            const value = line.slice(5);
-            // Remove one leading space if present per the SSE spec.
-            dataPayload += (value.startsWith(' ') ? value.slice(1) : value) + '\n';
+            let value = line.slice(5);
+            if (value.startsWith(' ')) {
+              value = value.slice(1);
+            }
+            dataLines.push(value);
           }
         }
 
-        if (!dataPayload) {
+        if (!dataLines.length) {
           return;
         }
 
-        const serialized = dataPayload.endsWith('\n')
-          ? dataPayload.slice(0, -1)
-          : dataPayload;
+        const payloadText = dataLines.join('\n');
 
-        const payload = JSON.parse(serialized);
+        if (payloadText === '[DONE]') {
+          streamingIndexRef.current = null;
+          setLoading(false);
+          return;
+        }
+
+        let payload;
+        try {
+          payload = JSON.parse(payloadText);
+        } catch (parseError) {
+          console.warn('Ignoring malformed SSE payload:', payloadText, parseError);
+          return;
+        }
 
         if (payload.token) {
           setMessages((prev) => {
@@ -141,26 +159,34 @@ function Chat() {
         }
       };
 
+      const flushBuffer = (final = false) => {
+        if (!buffer) {
+          return;
+        }
+
+        const normalized = buffer
+          .replace(/\r\n/g, '\n')
+          .replace(/\r/g, '\n');
+        const parts = normalized.split(/\n{2,}/);
+
+        const remainder = final ? '' : parts.pop() ?? '';
+
+        for (const part of parts) {
+          const trimmed = part.trim();
+          if (trimmed) {
+            processEvent(trimmed);
+          }
+        }
+
+        buffer = final ? '' : remainder;
+      };
+
       while (true) {
         const { value, done } = await reader.read();
         buffer += decoder.decode(value || new Uint8Array(), { stream: !done });
-        buffer = buffer.replace(/\r\n/g, '\n');
-
-        let boundary = buffer.indexOf('\n\n');
-        while (boundary !== -1) {
-          const chunk = buffer.slice(0, boundary);
-          buffer = buffer.slice(boundary + 2);
-          if (chunk.trim()) {
-            processEvent(chunk);
-          }
-          boundary = buffer.indexOf('\n\n');
-        }
+        flushBuffer(done);
 
         if (done) {
-          const remaining = buffer.trim();
-          if (remaining) {
-            processEvent(remaining);
-          }
           break;
         }
       }
