@@ -80,9 +80,9 @@ function Chat() {
       let buffer = '';
 
       const processEvent = (eventBlock) => {
-
         const lines = eventBlock.split('\n');
         const dataLines = [];
+
 
         for (const rawLine of lines) {
           const line = rawLine.trimEnd();
