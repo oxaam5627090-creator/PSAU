@@ -80,6 +80,7 @@ function Chat() {
       let buffer = '';
 
       const processEvent = (eventBlock) => {
+
         const lines = eventBlock.split('\n');
         const dataLines = [];
 
