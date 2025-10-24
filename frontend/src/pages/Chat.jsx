@@ -79,80 +79,113 @@ function Chat() {
       const decoder = new TextDecoder('utf-8');
       let buffer = '';
 
+      const processEvent = (eventBlock) => {
+        const lines = eventBlock.split('\n');
+        const dataLines = [];
+
+        for (const rawLine of lines) {
+          const line = rawLine.trimEnd();
+
+          if (!line || line.startsWith(':')) {
+            continue;
+          }
+
+          if (line.startsWith('data:')) {
+            let value = line.slice(5);
+            if (value.startsWith(' ')) {
+              value = value.slice(1);
+            }
+            dataLines.push(value);
+          }
+        }
+
+        if (!dataLines.length) {
+          return;
+        }
+
+        const payloadText = dataLines.join('\n');
+
+        if (payloadText === '[DONE]') {
+          streamingIndexRef.current = null;
+          setLoading(false);
+          return;
+        }
+
+        let payload;
+        try {
+          payload = JSON.parse(payloadText);
+        } catch (parseError) {
+          console.warn('Ignoring malformed SSE payload:', payloadText, parseError);
+          return;
+        }
+
+        if (payload.token) {
+          setMessages((prev) => {
+            const updated = [...prev];
+            const idx = streamingIndexRef.current;
+            if (idx !== null && updated[idx]) {
+              updated[idx] = {
+                ...updated[idx],
+                content: (updated[idx].content || '') + payload.token,
+              };
+            }
+            return updated;
+          });
+        }
+
+        if (payload.chatId && !currentChatId) {
+          setCurrentChatId(payload.chatId.toString());
+          navigate(`/chat/${payload.chatId}`, { replace: true });
+        }
+
+        if (payload.error) {
+          throw new Error(payload.error);
+        }
+
+        if (payload.done) {
+          if (payload.message) {
+            setMessages((prev) => {
+              const updated = [...prev];
+              const idx = streamingIndexRef.current;
+              if (idx !== null && updated[idx]) {
+                updated[idx] = { ...updated[idx], content: payload.message };
+              }
+              return updated;
+            });
+          }
+          streamingIndexRef.current = null;
+          setLoading(false);
+        }
+      };
+
+      const flushBuffer = (final = false) => {
+        if (!buffer) {
+          return;
+        }
+
+        const normalized = buffer
+          .replace(/\r\n/g, '\n')
+          .replace(/\r/g, '\n');
+        const parts = normalized.split(/\n{2,}/);
+
+        const remainder = final ? '' : parts.pop() ?? '';
+
+        for (const part of parts) {
+          const trimmed = part.trim();
+          if (trimmed) {
+            processEvent(trimmed);
+          }
+        }
+
+        buffer = final ? '' : remainder;
+      };
+
       while (true) {
         const { value, done } = await reader.read();
         buffer += decoder.decode(value || new Uint8Array(), { stream: !done });
-
-        let boundary = buffer.indexOf('\n\n');
-        while (boundary !== -1) {
-          const chunk = buffer.slice(0, boundary).trim();
-          buffer = buffer.slice(boundary + 2);
-          if (chunk.startsWith('data:')) {
-            try {
-              const payload = JSON.parse(chunk.replace(/^data:\s*/, ''));
-              if (payload.token) {
-                setMessages((prev) => {
-                  const updated = [...prev];
-                  const idx = streamingIndexRef.current;
-                  if (idx !== null && updated[idx]) {
-                    updated[idx] = {
-                      ...updated[idx],
-                      content: (updated[idx].content || '') + payload.token,
-                    };
-                  }
-                  return updated;
-                });
-              }
-              if (payload.chatId && !currentChatId) {
-                setCurrentChatId(payload.chatId.toString());
-                navigate(`/chat/${payload.chatId}`, { replace: true });
-              }
-              if (payload.error) {
-                throw new Error(payload.error);
-              }
-              if (payload.done) {
-                if (payload.message) {
-                  setMessages((prev) => {
-                    const updated = [...prev];
-                    const idx = streamingIndexRef.current;
-                    if (idx !== null && updated[idx]) {
-                      updated[idx] = { ...updated[idx], content: payload.message };
-                    }
-                    return updated;
-                  });
-                }
-                streamingIndexRef.current = null;
-                setLoading(false);
-              }
-            } catch (err) {
-              throw err;
-            }
-          }
-          boundary = buffer.indexOf('\n\n');
-        }
+        flushBuffer(done);
 
         if (done) {
-          const remaining = buffer.trim();
-          if (remaining.startsWith('data:')) {
-            const payload = JSON.parse(remaining.replace(/^data:\s*/, ''));
-            if (payload.error) {
-              throw new Error(payload.error);
-            }
-            if (payload.done) {
-              if (payload.message) {
-                setMessages((prev) => {
-                  const updated = [...prev];
-                  const idx = streamingIndexRef.current;
-                  if (idx !== null && updated[idx]) {
-                    updated[idx] = { ...updated[idx], content: payload.message };
-                  }
-                  return updated;
-                });
-              }
-              streamingIndexRef.current = null;
-              setLoading(false);
-            }
-          }
           break;
         }
       }
