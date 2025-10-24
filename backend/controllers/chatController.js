@@ -91,7 +91,7 @@ async function continueChat(req, res) {
       return res.status(404).json({ message: 'Chat not found' });
     }
 
-    const history = JSON.parse(chat.messages);
+    const history = parseChatMessages(chat.messages);
     history.push({ role: 'user', content: message });
 
     const [[user]] = await pool.query('SELECT * FROM users WHERE id = ?', [userId]);
@@ -159,6 +159,45 @@ async function continueChat(req, res) {
     }
     res.write(`data: ${JSON.stringify({ error: clientMessage })}\n\n`);
     return res.end();
+  }
+}
+
+function parseChatMessages(raw) {
+  if (raw == null) {
+    return [];
+  }
+
+  if (Array.isArray(raw)) {
+    return raw.map((entry) => ({ ...entry }));
+  }
+
+  if (Buffer.isBuffer(raw)) {
+    return parseChatMessages(raw.toString('utf8'));
+  }
+
+  if (typeof raw === 'string') {
+    const trimmed = raw.trim();
+    if (!trimmed) {
+      return [];
+    }
+    return safeJsonParse(trimmed);
+  }
+
+  if (typeof raw === 'object') {
+    if (typeof raw.toJSON === 'function') {
+      return parseChatMessages(raw.toJSON());
+    }
+    return safeJsonParse(JSON.stringify(raw));
+  }
+
+  throw new Error('Unsupported chat history format');
+}
+
+function safeJsonParse(text) {
+  try {
+    return JSON.parse(text);
+  } catch (error) {
+    throw new Error(`Invalid chat history JSON: ${error.message}`);
   }
 }
 

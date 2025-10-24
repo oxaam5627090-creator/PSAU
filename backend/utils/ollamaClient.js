@@ -86,24 +86,72 @@ async function streamOllama(body, onEvent) {
   }
 
   let buffer = '';
+
+  const flushBuffer = (isFinal = false) => {
+    if (!buffer) {
+      return;
+    }
+
+    const normalized = buffer.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+    const segments = normalized.split(/\n{2,}/);
+    const remainder = isFinal ? '' : segments.pop() ?? '';
+
+    for (const segment of segments) {
+      if (!segment.trim()) {
+        continue;
+      }
+
+      const dataLines = [];
+      for (const rawLine of segment.split('\n')) {
+        const line = rawLine.trimEnd();
+        if (!line || line.startsWith(':')) {
+          continue;
+        }
+
+        if (line.startsWith('data:')) {
+          let value = line.slice(5);
+          if (value.startsWith(' ')) {
+            value = value.slice(1);
+          }
+          dataLines.push(value);
+        }
+      }
+
+      if (!dataLines.length) {
+        continue;
+      }
+
+      const payloadText = dataLines.join('\n').trim();
+      if (!payloadText) {
+        continue;
+      }
+
+      if (payloadText === '[DONE]') {
+        onEvent({ done: true });
+        continue;
+      }
+
+      if (!/^[\[{]/.test(payloadText)) {
+        console.warn('Ignoring non-JSON Ollama SSE payload:', payloadText);
+        continue;
+      }
+
+      try {
+        onEvent(JSON.parse(payloadText));
+      } catch (error) {
+        console.warn('Ignoring malformed Ollama SSE payload:', payloadText, error);
+      }
+    }
+
+    buffer = isFinal ? '' : remainder;
+  };
+
   for await (const chunk of response.body) {
     buffer += chunk.toString();
-
-    let newlineIndex = buffer.indexOf('\n');
-    while (newlineIndex !== -1) {
-      const line = buffer.slice(0, newlineIndex).trim();
-      buffer = buffer.slice(newlineIndex + 1);
-      if (line) {
-        onEvent(JSON.parse(line));
-      }
-      newlineIndex = buffer.indexOf('\n');
-    }
+    flushBuffer(false);
   }
 
-  const trimmed = buffer.trim();
-  if (trimmed) {
-    onEvent(JSON.parse(trimmed));
-  }
+  flushBuffer(true);
 }
 
 module.exports = { callOllama, streamOllama, OllamaError };
