@@ -136,6 +136,7 @@ async function streamOllama(body, onEvent) {
         continue;
       }
 
+
       try {
         onEvent(JSON.parse(payloadText));
       } catch (error) {
