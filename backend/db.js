@@ -22,6 +22,7 @@ async function migrate(connection = pool) {
       password VARCHAR(255) NOT NULL,
       schedule JSON NULL,
       personal_info JSON NULL,
+      preferred_language VARCHAR(5) NOT NULL DEFAULT 'ar',
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     ) ENGINE=InnoDB;
   `;
@@ -43,6 +44,7 @@ async function migrate(connection = pool) {
       user_id INT NOT NULL,
       file_path VARCHAR(255) NOT NULL,
       file_type VARCHAR(20) NOT NULL,
+      original_name VARCHAR(255) NOT NULL,
       uploaded_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     ) ENGINE=InnoDB;
@@ -51,6 +53,26 @@ async function migrate(connection = pool) {
   await connection.query(createUsers);
   await connection.query(createChats);
   await connection.query(createUploads);
+
+  try {
+    await connection.query(
+      "ALTER TABLE users ADD COLUMN preferred_language VARCHAR(5) NOT NULL DEFAULT 'ar' AFTER personal_info;"
+    );
+  } catch (error) {
+    if (error.code !== 'ER_DUP_FIELDNAME') {
+      throw error;
+    }
+  }
+
+  try {
+    await connection.query(
+      'ALTER TABLE uploads ADD COLUMN original_name VARCHAR(255) NOT NULL AFTER file_type;'
+    );
+  } catch (error) {
+    if (error.code !== 'ER_DUP_FIELDNAME') {
+      throw error;
+    }
+  }
 }
 
 module.exports = { pool, migrate };

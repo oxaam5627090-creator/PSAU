@@ -1,13 +1,19 @@
 body {
   margin: 0;
-  background: #f8fafc;
+  background: #f1f5f9;
+  font-family: 'Tajawal', sans-serif;
+  color: #0f172a;
+  direction: inherit;
 }
 
 * {
   box-sizing: border-box;
 }
 
-button {
+button,
+input,
+textarea,
+select {
   font-family: 'Tajawal', sans-serif;
 }
 
@@ -18,4 +24,8 @@ button {
   border-radius: 0.75rem;
   border: none;
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
 }

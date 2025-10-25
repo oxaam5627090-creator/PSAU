@@ -5,7 +5,7 @@ const { config } = require('../config');
 
 async function register(req, res) {
   try {
-    const { universityId, name, password, college, schedule } = req.body;
+    const { universityId, name, password, college, schedule, language } = req.body;
 
     if (!universityId || !name || !password || !college) {
       return res.status(400).json({ message: 'Missing required fields' });
@@ -21,10 +21,11 @@ async function register(req, res) {
 
     const hashed = await bcrypt.hash(password, 10);
     const scheduleJson = schedule ? JSON.stringify(schedule) : null;
+    const preferredLanguage = normalizeLanguage(language);
 
     await pool.query(
-      'INSERT INTO users (university_id, name, college, password, schedule, personal_info) VALUES (?, ?, ?, ?, ?, ?)',
-      [universityId, name, college, hashed, scheduleJson, JSON.stringify({})]
+      'INSERT INTO users (university_id, name, college, password, schedule, personal_info, preferred_language) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      [universityId, name, college, hashed, scheduleJson, JSON.stringify({}), preferredLanguage]
     );
 
     return res.status(201).json({ message: 'User registered' });
@@ -70,6 +71,7 @@ async function login(req, res) {
         college: user.college,
         schedule: user.schedule,
         personalInfo: user.personal_info,
+        preferredLanguage: user.preferred_language || 'ar',
       },
     });
   } catch (error) {
@@ -79,3 +81,12 @@ async function login(req, res) {
 }
 
 module.exports = { register, login };
+
+function normalizeLanguage(language) {
+  if (!language || typeof language !== 'string') {
+    return 'ar';
+  }
+
+  const value = language.toLowerCase();
+  return value === 'en' ? 'en' : 'ar';
+}
