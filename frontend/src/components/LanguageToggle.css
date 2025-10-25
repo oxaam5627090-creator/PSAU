@@ -1,0 +1,15 @@
+.language-toggle {
+  border: 1px solid #0f172a;
+  background: transparent;
+  color: #0f172a;
+  padding: 0.5rem 1rem;
+  border-radius: 999px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+
+.language-toggle:hover {
+  background: #0f172a;
+  color: #ffffff;
+}

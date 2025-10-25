@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS users (
   password VARCHAR(255) NOT NULL,
   schedule JSON NULL,
   personal_info JSON NULL,
+  preferred_language VARCHAR(5) NOT NULL DEFAULT 'ar',
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB;
 
@@ -26,6 +27,7 @@ CREATE TABLE IF NOT EXISTS uploads (
   user_id INT NOT NULL,
   file_path VARCHAR(255) NOT NULL,
   file_type VARCHAR(20) NOT NULL,
+  original_name VARCHAR(255) NOT NULL,
   uploaded_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;

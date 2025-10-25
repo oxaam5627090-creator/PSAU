@@ -1,11 +1,14 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import './Register.css';
+import LanguageToggle from '../components/LanguageToggle.jsx';
+import { useTranslation } from '../i18n/LanguageProvider.jsx';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
 
 function Register() {
   const navigate = useNavigate();
+  const { t, language } = useTranslation();
   const [form, setForm] = useState({
     universityId: '',
     name: '',
@@ -26,7 +29,7 @@ function Register() {
     setSuccess('');
 
     if (form.confirmPassword && form.confirmPassword !== form.password) {
-      setError('كلمتا المرور غير متطابقتين');
+      setError(t('registerPasswordMismatch'));
       return;
     }
 
@@ -44,10 +47,10 @@ function Register() {
 
       const data = await response.json();
       if (!response.ok) {
-        throw new Error(data.message || 'تعذر إنشاء الحساب');
+        throw new Error(data.message || t('registerError'));
       }
 
-      setSuccess('تم إنشاء الحساب بنجاح! سيتم تحويلك إلى صفحة تسجيل الدخول.');
+      setSuccess(t('registerSuccess'));
       setTimeout(() => {
         navigate('/login');
       }, 1200);
@@ -57,13 +60,16 @@ function Register() {
   };
 
   return (
-    <div className="register-page">
+    <div className="register-page" dir={language === 'ar' ? 'rtl' : 'ltr'}>
+      <div className="register-toggle">
+        <LanguageToggle />
+      </div>
       <form className="register-card" onSubmit={handleSubmit}>
-        <h1>إنشاء حساب جديد</h1>
+        <h1>{t('registerTitle')}</h1>
         {error && <p className="error">{error}</p>}
         {success && <p className="success">{success}</p>}
         <label>
-          الرقم الجامعي
+          {t('registerUniversityId')}
           <input
             type="text"
             name="universityId"
@@ -73,7 +79,7 @@ function Register() {
           />
         </label>
         <label>
-          الاسم الكامل
+          {t('registerName')}
           <input
             type="text"
             name="name"
@@ -83,7 +89,7 @@ function Register() {
           />
         </label>
         <label>
-          الكلية
+          {t('registerCollege')}
           <input
             type="text"
             name="college"
@@ -93,7 +99,7 @@ function Register() {
           />
         </label>
         <label>
-          كلمة المرور
+          {t('registerPassword')}
           <input
             type="password"
             name="password"
@@ -103,7 +109,7 @@ function Register() {
           />
         </label>
         <label>
-          تأكيد كلمة المرور (اختياري)
+          {t('registerConfirmPassword')}
           <input
             type="password"
             name="confirmPassword"
@@ -111,9 +117,10 @@ function Register() {
             onChange={handleChange}
           />
         </label>
-        <button type="submit">تسجيل</button>
+        <button type="submit">{t('registerSubmit')}</button>
         <p className="secondary-action">
-          لديك حساب بالفعل؟ <Link to="/login">توجه إلى تسجيل الدخول</Link>
+          {t('registerHaveAccount')}{' '}
+          <Link to="/login">{t('registerLoginLink')}</Link>
         </p>
       </form>
     </div>

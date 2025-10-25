@@ -18,16 +18,18 @@ async function handleUpload(req, res) {
       return res.status(400).json({ message: 'Unsupported file type' });
     }
 
-    await pool.query(
-      'INSERT INTO uploads (user_id, file_path, file_type) VALUES (?, ?, ?)',
-      [userId, req.file.path, ext]
+    const [result] = await pool.query(
+      'INSERT INTO uploads (user_id, file_path, file_type, original_name) VALUES (?, ?, ?, ?)',
+      [userId, req.file.path, ext, req.file.originalname]
     );
 
     const extracted = await extractTextFromFile(req.file.path, ext);
 
     return res.json({
+      id: result.insertId,
       path: req.file.path,
       fileType: ext,
+      fileName: req.file.originalname,
       extractedText: extracted,
     });
   } catch (error) {
@@ -40,7 +42,7 @@ async function listUploads(req, res) {
   try {
     const { userId } = req.user;
     const [uploads] = await pool.query(
-      'SELECT id, file_path, file_type, uploaded_at FROM uploads WHERE user_id = ? ORDER BY uploaded_at DESC',
+      'SELECT id, file_path, file_type, original_name, uploaded_at FROM uploads WHERE user_id = ? ORDER BY uploaded_at DESC',
       [userId]
     );
     return res.json(uploads);
