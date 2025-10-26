@@ -1,7 +1,9 @@
 const { callOllama } = require('./ollamaClient');
 const { config } = require('../config');
 
+
 async function summarizeConversation(history, language = 'ar') {
+
   const conversation = history
     .map((entry) => {
       const base = `${entry.role}: ${entry.content ?? ''}`;
@@ -20,10 +22,12 @@ async function summarizeConversation(history, language = 'ar') {
     })
     .join('\n');
 
+
   const isEnglish = language === 'en';
   const summaryPrompt = isEnglish
     ? `Summarize the following conversation into short bullet points in clear English. Focus on details that matter to the student (classes, advisors, deadlines).\n\n${conversation}\n\nSummary:`
     : `لخّص المحادثة التالية في نقاط بسيطة باللغة العربية الفصحى مع التركيز على المعلومات المهمة عن الطالب.\n\n${conversation}\n\nالخلاصة:`;
+
 
   try {
     const response = await callOllama({
