@@ -40,9 +40,7 @@ function Login() {
       if (data.user?.preferredLanguage) {
         setLanguage(data.user.preferredLanguage);
       }
-
       navigate('/chat');
-
     } catch (err) {
       setError(err.message);
     }

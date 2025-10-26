@@ -62,7 +62,6 @@ export const translations = {
     chatUploading: 'جاري الرفع...',
     chatAttachmentLimit: 'يمكنك إضافة حتى 5 ملفات في كل رسالة.',
     chatMessageAttachments: 'المرفقات:',
-
     chatNewChat: 'محادثة جديدة',
     chatListLoading: 'جارٍ تحميل المحادثات…',
     chatListEmpty: 'لم تبدأ أي محادثة بعد.',
@@ -77,7 +76,6 @@ export const translations = {
     chatRoleAssistant: 'المساعد',
     chatProfileLoading: 'جارٍ تحميل ملفك الشخصي…',
     saving: 'جاري الحفظ…',
-
     dashboardLanguageUpdated: 'تم تحديث اللغة.',
     dashboardLanguageError: 'تعذر تحديث اللغة.',
     dashboardLanguageLabel: 'اللغة',
@@ -152,7 +150,6 @@ export const translations = {
     chatUploading: 'Uploading...',
     chatAttachmentLimit: 'You can add up to 5 files per message.',
     chatMessageAttachments: 'Attachments:',
-
     chatNewChat: 'New chat',
     chatListLoading: 'Loading conversations…',
     chatListEmpty: 'No conversations yet.',
@@ -167,7 +164,6 @@ export const translations = {
     chatRoleAssistant: 'Assistant',
     chatProfileLoading: 'Loading your profile…',
     saving: 'Saving…',
-
     dashboardLanguageUpdated: 'Language updated.',
     dashboardLanguageError: 'Could not update the language.',
     dashboardLanguageLabel: 'Language',

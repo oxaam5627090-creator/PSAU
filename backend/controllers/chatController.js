@@ -84,8 +84,8 @@ async function createChat(req, res) {
       'INSERT INTO chats (user_id, messages, summary) VALUES (?, ?, ?)',
 
       [userId, JSON.stringify(history), finalSummary]
-
     );
+
 
     res.write(
       `data: ${JSON.stringify({
@@ -245,6 +245,7 @@ async function getChat(req, res) {
     return res.status(500).json({ message: 'Internal server error' });
   }
 }
+
 
 
 async function listChats(req, res) {

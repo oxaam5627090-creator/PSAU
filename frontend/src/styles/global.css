@@ -28,12 +28,10 @@ select {
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-
   font-weight: 600;
   transition: all 0.2s ease;
 }
 
 .secondary-btn:hover {
   background: #cbd5f5;
-
 }
