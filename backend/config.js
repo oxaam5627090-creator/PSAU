@@ -17,7 +17,7 @@ const config = {
   memoryTokenLimit: process.env.MEMORY_TOKEN_LIMIT ? Number(process.env.MEMORY_TOKEN_LIMIT) : 6000,
   ollama: {
     host: process.env.OLLAMA_HOST || 'http://localhost:11434',
-    model: process.env.OLLAMA_MODEL || 'llama3.2:3b-instruct-q4',
+    model: process.env.OLLAMA_MODEL || 'llama3.1:8b',
   },
   enableWebSearch: process.env.ENABLE_WEB_SEARCH === 'true',
   webSearchApiKey: process.env.WEB_SEARCH_API_KEY || '',

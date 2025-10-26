@@ -64,22 +64,36 @@ async function createChat(req, res) {
       }
     });
 
+    const history = [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: message, attachments: sanitizedAttachments },
+      { role: 'assistant', content: assistantMessage },
+    ];
+
+    let summary = '';
+    try {
+      summary = await summarizeConversation(history, preferredLanguage);
+    } catch (error) {
+      console.error('summarizeConversation error (createChat)', error);
+    }
+
+    const fallbackSummary = buildFallbackSummary(history, preferredLanguage);
+    const finalSummary = pickSummary(summary, fallbackSummary);
+
     const [result] = await pool.query(
       'INSERT INTO chats (user_id, messages, summary) VALUES (?, ?, ?)',
-      [
-        userId,
-        JSON.stringify([
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: message, attachments: sanitizedAttachments },
-          { role: 'assistant', content: assistantMessage },
-        ]),
-        null,
-      ]
+
+      [userId, JSON.stringify(history), finalSummary]
+
     );
 
-
     res.write(
-      `data: ${JSON.stringify({ done: true, chatId: result.insertId, message: assistantMessage })}\n\n`
+      `data: ${JSON.stringify({
+        done: true,
+        chatId: result.insertId,
+        message: assistantMessage,
+        summary: finalSummary,
+      })}\n\n`
     );
     return res.end();
   } catch (error) {
@@ -158,11 +172,19 @@ async function continueChat(req, res) {
 
     history.push({ role: 'assistant', content: assistantMessage });
 
-    const summary = await summarizeConversation(history);
+    let summary = '';
+    try {
+      summary = await summarizeConversation(history, preferredLanguage);
+    } catch (error) {
+      console.error('summarizeConversation error (continueChat)', error);
+    }
+
+    const fallbackSummary = buildFallbackSummary(history, preferredLanguage);
+    const finalSummary = pickSummary(summary, fallbackSummary);
 
     await pool.query('UPDATE chats SET messages = ?, summary = ? WHERE id = ?', [
       JSON.stringify(history),
-      summary,
+      finalSummary,
       chatId,
     ]);
 
@@ -172,7 +194,9 @@ async function continueChat(req, res) {
     ]);
 
 
-    res.write(`data: ${JSON.stringify({ done: true, message: assistantMessage })}\n\n`);
+    res.write(
+      `data: ${JSON.stringify({ done: true, message: assistantMessage, summary: finalSummary })}\n\n`
+    );
     return res.end();
   } catch (error) {
     console.error('continueChat error', error);
@@ -199,10 +223,16 @@ async function getChat(req, res) {
       return res.status(404).json({ message: 'Chat not found' });
     }
 
-    const messages = parseChatMessages(chat.messages).map((entry) => ({
+
+    const history = parseChatMessages(chat.messages).map((entry) => ({
+
       ...entry,
       attachments: sanitizeAttachments(entry.attachments),
     }));
+
+
+    const messages = history.filter((entry) => entry.role !== 'system');
+
 
     return res.json({
       id: chat.id,
@@ -215,6 +245,47 @@ async function getChat(req, res) {
     return res.status(500).json({ message: 'Internal server error' });
   }
 }
+
+
+async function listChats(req, res) {
+  try {
+    const { userId } = req.user;
+
+    const [[user]] = await pool.query('SELECT preferred_language FROM users WHERE id = ?', [userId]);
+    const preferredLanguage = user?.preferred_language || 'ar';
+
+    const [rows] = await pool.query(
+      'SELECT id, messages, summary, created_at FROM chats WHERE user_id = ? ORDER BY created_at DESC',
+      [userId]
+    );
+
+    const chats = rows.map((row) => mapChatRowToListItem(row, preferredLanguage));
+
+    return res.json({ chats });
+  } catch (error) {
+    console.error('listChats error', error);
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+}
+
+async function deleteChat(req, res) {
+  try {
+    const { chatId } = req.params;
+    const { userId } = req.user;
+
+    const [result] = await pool.query('DELETE FROM chats WHERE id = ? AND user_id = ?', [chatId, userId]);
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ message: 'Chat not found' });
+    }
+
+    return res.status(204).end();
+  } catch (error) {
+    console.error('deleteChat error', error);
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+}
+
 
 function parseChatMessages(raw) {
   if (raw == null) {
@@ -357,6 +428,65 @@ function pickString(value) {
   return trimmed;
 }
 
+
+function buildFallbackSummary(history, language = 'ar') {
+  const firstUser = history.find((entry) => entry.role === 'user' && pickString(entry.content));
+  if (firstUser) {
+    return truncate(pickString(firstUser.content), 120);
+  }
+
+  const firstAssistant = history.find(
+    (entry) => entry.role === 'assistant' && pickString(entry.content)
+  );
+  if (firstAssistant) {
+    return truncate(pickString(firstAssistant.content), 120);
+  }
+
+  return language === 'en' ? 'New conversation' : 'محادثة جديدة';
+}
+
+function pickSummary(primary, fallback) {
+  const primaryText = pickString(primary);
+  if (primaryText) {
+    return truncate(primaryText, 160);
+  }
+  return truncate(pickString(fallback), 160) || fallback;
+}
+
+function mapChatRowToListItem(row, language = 'ar') {
+  let history = [];
+  try {
+    history = parseChatMessages(row.messages).map((entry) => ({
+      ...entry,
+      attachments: sanitizeAttachments(entry.attachments),
+    }));
+  } catch (error) {
+    console.warn('Failed to parse chat history for list item', error);
+  }
+
+  const fallbackSummary = buildFallbackSummary(history, language);
+  const summary = pickSummary(row.summary, fallbackSummary);
+  const preview = truncate(pickString(getLastAssistantContent(history)) || summary, 180);
+
+  return {
+    id: row.id,
+    title: summary,
+    preview,
+    createdAt: row.created_at,
+  };
+}
+
+function getLastAssistantContent(history) {
+  for (let index = history.length - 1; index >= 0; index -= 1) {
+    const entry = history[index];
+    if (entry.role === 'assistant' && pickString(entry.content)) {
+      return entry.content;
+    }
+  }
+  return '';
+}
+
+
 function updatePersonalInfo(personalInfo, history) {
   const existing = typeof personalInfo === 'string' && personalInfo.trim()
     ? safeParseObject(personalInfo)
@@ -387,7 +517,9 @@ function safeParseObject(text) {
   }
 }
 
-module.exports = { createChat, continueChat, getChat };
+
+module.exports = { createChat, continueChat, getChat, listChats, deleteChat };
+
 
 function mapErrorToClientMessage(error) {
   const fallback = {

@@ -19,13 +19,21 @@ select {
 
 .secondary-btn {
   background: #e2e8f0;
-  color: #0f172a;
+  color: #1e293b;
   padding: 0.6rem 1.2rem;
   border-radius: 0.75rem;
-  border: none;
+  border: 1px solid transparent;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
+
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.secondary-btn:hover {
+  background: #cbd5f5;
+
 }
