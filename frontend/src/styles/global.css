@@ -1,21 +1,37 @@
 body {
   margin: 0;
-  background: #f8fafc;
+  background: #f1f5f9;
+  font-family: 'Tajawal', sans-serif;
+  color: #0f172a;
+  direction: inherit;
 }
 
 * {
   box-sizing: border-box;
 }
 
-button {
+button,
+input,
+textarea,
+select {
   font-family: 'Tajawal', sans-serif;
 }
 
 .secondary-btn {
   background: #e2e8f0;
-  color: #0f172a;
+  color: #1e293b;
   padding: 0.6rem 1.2rem;
   border-radius: 0.75rem;
-  border: none;
+  border: 1px solid transparent;
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.secondary-btn:hover {
+  background: #cbd5f5;
 }

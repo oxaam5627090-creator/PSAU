@@ -5,6 +5,7 @@
   justify-content: center;
   background: linear-gradient(135deg, #0d9488, #2563eb);
   font-family: 'Tajawal', sans-serif;
+  position: relative;
 }
 
 .login-card {
@@ -13,7 +14,7 @@
   border-radius: 1rem;
   box-shadow: 0 20px 40px rgba(15, 23, 42, 0.2);
   width: min(90%, 420px);
-  direction: rtl;
+  direction: inherit;
 }
 
 .login-card h1 {
@@ -73,4 +74,10 @@
 
 .secondary-action a:hover {
   text-decoration: underline;
+}
+
+.login-toggle {
+  position: absolute;
+  top: 1.5rem;
+  inset-inline-end: 1.5rem;
 }
