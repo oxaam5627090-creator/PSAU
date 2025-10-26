@@ -1,11 +1,14 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import './Login.css';
+import LanguageToggle from '../components/LanguageToggle.jsx';
+import { useTranslation } from '../i18n/LanguageProvider.jsx';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
 
 function Login() {
   const navigate = useNavigate();
+  const { t, language, setLanguage } = useTranslation();
   const [form, setForm] = useState({
     universityId: '',
     password: '',
@@ -29,24 +32,30 @@ function Login() {
 
       const data = await response.json();
       if (!response.ok) {
-        throw new Error(data.message || 'فشل تسجيل الدخول');
+        throw new Error(data.message || t('loginError'));
       }
 
       localStorage.setItem('token', data.token);
       localStorage.setItem('user', JSON.stringify(data.user));
-      navigate('/dashboard');
+      if (data.user?.preferredLanguage) {
+        setLanguage(data.user.preferredLanguage);
+      }
+      navigate('/chat');
     } catch (err) {
       setError(err.message);
     }
   };
 
   return (
-    <div className="login-page">
+    <div className="login-page" dir={language === 'ar' ? 'rtl' : 'ltr'}>
+      <div className="login-toggle">
+        <LanguageToggle />
+      </div>
       <form className="login-card" onSubmit={handleSubmit}>
-        <h1>دخول الطلاب</h1>
+        <h1>{t('loginTitle')}</h1>
         {error && <p className="error">{error}</p>}
         <label>
-          رقمك الجامعي
+          {t('loginUniversityId')}
           <input
             type="text"
             name="universityId"
@@ -56,7 +65,7 @@ function Login() {
           />
         </label>
         <label>
-          كلمة المرور
+          {t('loginPassword')}
           <input
             type="password"
             name="password"
@@ -65,9 +74,10 @@ function Login() {
             required
           />
         </label>
-        <button type="submit">دخول</button>
+        <button type="submit">{t('loginSubmit')}</button>
         <p className="secondary-action">
-          طالب جديد؟ <Link to="/register">أنشئ حسابًا الآن</Link>
+          {t('loginRegisterPrompt')}{' '}
+          <Link to="/register">{t('loginRegisterLink')}</Link>
         </p>
       </form>
     </div>

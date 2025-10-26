@@ -10,6 +10,7 @@ const authRoutes = require('./routes/auth');
 const chatRoutes = require('./routes/chat');
 const uploadRoutes = require('./routes/upload');
 const adminRoutes = require('./routes/admin');
+const userRoutes = require('./routes/user');
 
 const app = express();
 
@@ -37,6 +38,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/uploads', uploadRoutes(upload));
 app.use('/api/admin', adminRoutes);
+app.use('/api/user', userRoutes);
 
 app.get('/health', (req, res) => {
   res.json({ status: 'ok' });
