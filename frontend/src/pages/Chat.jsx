@@ -3,8 +3,10 @@ import { useNavigate, useParams } from 'react-router-dom';
 import './Chat.css';
 import LanguageToggle from '../components/LanguageToggle.jsx';
 import { useTranslation } from '../i18n/LanguageProvider.jsx';
+
 import ChatSidebar from '../components/ChatSidebar.jsx';
 import ProfileTab from '../components/ProfileTab.jsx';
+
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
 
@@ -21,6 +23,7 @@ function Chat() {
   const [currentChatId, setCurrentChatId] = useState(chatId || null);
   const [error, setError] = useState(null);
   const [historyLoading, setHistoryLoading] = useState(false);
+
   const [activeTab, setActiveTab] = useState('chat');
 
   const [chatList, setChatList] = useState([]);
@@ -41,6 +44,7 @@ function Chat() {
   const streamingIndexRef = useRef(null);
   const fileInputRef = useRef(null);
 
+
   const handleUnauthorized = useCallback(() => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
@@ -54,6 +58,7 @@ function Chat() {
   }, [navigate]);
 
   useEffect(() => {
+
     if (activeTab === 'chat') {
       endRef.current?.scrollIntoView({ behavior: 'smooth' });
     }
@@ -138,6 +143,7 @@ function Chat() {
     }
   }, [handleUnauthorized, setLanguage, t]);
 
+
   useEffect(() => {
     loadChatList();
     fetchProfile();
@@ -161,6 +167,7 @@ function Chat() {
           const payload = await response.json().catch(() => ({}));
           throw new Error(payload.message || t('chatError'));
         }
+
 
         const data = await response.json();
         const filtered = Array.isArray(data.messages)
@@ -187,6 +194,7 @@ function Chat() {
       setMessages([]);
     }
   }, [chatId, loadChat]);
+
 
   const clearProfileFeedback = useCallback(() => {
     setProfileMessage('');
@@ -469,6 +477,7 @@ function Chat() {
     } finally {
       if (sendSucceeded) {
         setAttachments([]);
+
         loadChatList();
       }
     }
@@ -597,6 +606,7 @@ function Chat() {
       setProfileError(err.message || t('dashboardScheduleSaveError'));
     } finally {
       setSavingSchedule(false);
+
     }
   };
 
@@ -700,6 +710,7 @@ function Chat() {
   );
 
   return (
+
     <div className="chat-layout" dir={language === 'ar' ? 'rtl' : 'ltr'}>
       <ChatSidebar
         chats={chatList}
@@ -834,13 +845,16 @@ function Chat() {
           />
         )}
       </main>
+
     </div>
   );
 }
 
 export default Chat;
 
+
 function updateUserStorage(patch) {
+
   try {
     const stored = JSON.parse(localStorage.getItem('user') || '{}');
     localStorage.setItem('user', JSON.stringify({ ...stored, ...patch }));
@@ -848,6 +862,7 @@ function updateUserStorage(patch) {
     // Ignore storage errors.
   }
 }
+
 
 function normalizeSchedule(schedule) {
   if (!Array.isArray(schedule)) {
@@ -866,3 +881,4 @@ function normalizeSchedule(schedule) {
 function createEmptyScheduleRow() {
   return { day: '', time: '', course: '' };
 }
+

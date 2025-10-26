@@ -82,7 +82,9 @@ async function createChat(req, res) {
 
     const [result] = await pool.query(
       'INSERT INTO chats (user_id, messages, summary) VALUES (?, ?, ?)',
+
       [userId, JSON.stringify(history), finalSummary]
+
     );
 
     res.write(
@@ -221,12 +223,16 @@ async function getChat(req, res) {
       return res.status(404).json({ message: 'Chat not found' });
     }
 
+
     const history = parseChatMessages(chat.messages).map((entry) => ({
+
       ...entry,
       attachments: sanitizeAttachments(entry.attachments),
     }));
 
+
     const messages = history.filter((entry) => entry.role !== 'system');
+
 
     return res.json({
       id: chat.id,
@@ -239,6 +245,7 @@ async function getChat(req, res) {
     return res.status(500).json({ message: 'Internal server error' });
   }
 }
+
 
 async function listChats(req, res) {
   try {
@@ -278,6 +285,7 @@ async function deleteChat(req, res) {
     return res.status(500).json({ message: 'Internal server error' });
   }
 }
+
 
 function parseChatMessages(raw) {
   if (raw == null) {
@@ -420,6 +428,7 @@ function pickString(value) {
   return trimmed;
 }
 
+
 function buildFallbackSummary(history, language = 'ar') {
   const firstUser = history.find((entry) => entry.role === 'user' && pickString(entry.content));
   if (firstUser) {
@@ -477,6 +486,7 @@ function getLastAssistantContent(history) {
   return '';
 }
 
+
 function updatePersonalInfo(personalInfo, history) {
   const existing = typeof personalInfo === 'string' && personalInfo.trim()
     ? safeParseObject(personalInfo)
@@ -507,7 +517,9 @@ function safeParseObject(text) {
   }
 }
 
+
 module.exports = { createChat, continueChat, getChat, listChats, deleteChat };
+
 
 function mapErrorToClientMessage(error) {
   const fallback = {
