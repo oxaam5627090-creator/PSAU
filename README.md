@@ -177,7 +177,7 @@ A reference script is available under `scripts/finetune.py` (see repo). It demon
 
 ## Updating the System Prompt
 
-Modify `backend/utils/promptBuilder.js` to tweak tone or inject additional context. Environment variables (`MEMORY_TOKEN_LIMIT`) control how much student memory is appended per request.
+Customize the assistant tone directly from `.env`: set `LLM_SYSTEM_PROMPT` for a global override or `LLM_SYSTEM_PROMPT_AR` / `LLM_SYSTEM_PROMPT_EN` for language-specific variants. Environment variables (`MEMORY_TOKEN_LIMIT`) control how much student memory is appended per request.
 
 ## Reloading or Replacing the Model
 
@@ -207,6 +207,7 @@ Key LLM variables:
 * `LLM_BASE_URL` – HTTP endpoint for the provider (e.g., `http://localhost:11434` or `https://api.allam.world`)
 * `LLM_API_KEY` – required for authenticated providers such as Allam
 * Optional tuning knobs: `LLM_TEMPERATURE`, `LLM_MAX_OUTPUT_TOKENS`, `LLM_TOP_P`
+* Optional system prompt overrides: `LLM_SYSTEM_PROMPT`, `LLM_SYSTEM_PROMPT_AR`, `LLM_SYSTEM_PROMPT_EN`
 
 
 ## Optional: Windows 11 with WSL

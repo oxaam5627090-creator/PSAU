@@ -534,11 +534,20 @@ function mapChatRowToListItem(row, language = 'ar') {
 
   const fallbackSummary = buildFallbackSummary(history, language);
   const summary = pickSummary(row.summary, fallbackSummary);
-  const preview = truncate(pickString(getLastAssistantContent(history)) || summary, 180);
+  const rawTitle =
+    pickString(getFirstUserContent(history)) ||
+    pickString(row.summary) ||
+    fallbackSummary ||
+    (language === 'en' ? 'New conversation' : 'محادثة جديدة');
+  const title = truncate(rawTitle, 120);
+  const preview = truncate(
+    pickString(getLastAssistantContent(history)) || pickString(row.summary) || fallbackSummary,
+    180
+  );
 
   return {
     id: row.id,
-    title: summary,
+    title,
     preview,
     createdAt: row.created_at,
   };
@@ -551,6 +560,21 @@ function getLastAssistantContent(history) {
       return entry.content;
     }
   }
+  return '';
+}
+
+function getFirstUserContent(history) {
+  if (!Array.isArray(history)) {
+    return '';
+  }
+
+  for (let index = 0; index < history.length; index += 1) {
+    const entry = history[index];
+    if (entry.role === 'user' && pickString(entry.content)) {
+      return entry.content;
+    }
+  }
+
   return '';
 }
 
