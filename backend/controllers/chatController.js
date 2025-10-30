@@ -1,6 +1,6 @@
 const { pool } = require('../db');
 const { buildPrompt } = require('../utils/promptBuilder');
-const { streamOllama } = require('../utils/ollamaClient');
+const { streamLLM } = require('../utils/llmClient');
 const { summarizeConversation } = require('../utils/summarizer');
 const { config } = require('../config');
 
@@ -50,14 +50,20 @@ async function createChat(req, res) {
       res.flushHeaders();
     }
 
-    const payload = {
-      model: config.ollama.model,
+    const initialHistory = [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: message, attachments: sanitizedAttachments },
+    ];
+
+    const payload = buildModelPayload({
       prompt: `${promptSegments.join('\n\n')}\n${assistantLabel}:`,
-    };
+      system: systemPrompt,
+      messages: buildModelMessages(initialHistory, preferredLanguage),
+    });
 
     let assistantMessage = '';
 
-    await streamOllama(payload, (event) => {
+    await streamLLM(payload, (event) => {
       if (event.response) {
         assistantMessage += event.response;
         res.write(`data: ${JSON.stringify({ token: event.response })}\n\n`);
@@ -156,11 +162,14 @@ async function continueChat(req, res) {
 
     let assistantMessage = '';
 
-    await streamOllama(
-      {
-        model: config.ollama.model,
-        prompt: `${prompt}\n${assistantLabel}:`,
-      },
+    const payload = buildModelPayload({
+      prompt: `${prompt}\n${assistantLabel}:`,
+      system: systemPrompt,
+      messages: buildModelMessages(history, preferredLanguage),
+    });
+
+    await streamLLM(
+      payload,
       (event) => {
         if (event.response) {
           assistantMessage += event.response;
@@ -384,6 +393,64 @@ function formatAttachmentsForPrompt(attachments, language = 'ar') {
     .join('\n');
 }
 
+function buildModelPayload(base = {}) {
+  const payload = {
+    model: config.llm.model,
+    ...base,
+  };
+
+  if (payload.temperature === undefined && config.llm.temperature !== undefined) {
+    payload.temperature = config.llm.temperature;
+  }
+
+  if (payload.maxOutputTokens === undefined && config.llm.maxOutputTokens !== undefined) {
+    payload.maxOutputTokens = config.llm.maxOutputTokens;
+  }
+
+  if (payload.topP === undefined && config.llm.topP !== undefined) {
+    payload.topP = config.llm.topP;
+  }
+
+  return payload;
+}
+
+function buildModelMessages(history, language = 'ar') {
+  if (!Array.isArray(history)) {
+    return [];
+  }
+
+  return history
+    .map((entry) => {
+      if (!entry || typeof entry !== 'object') {
+        return null;
+      }
+
+      const content = formatEntryForModel(entry, language);
+      if (!content) {
+        return null;
+      }
+
+      const role = typeof entry.role === 'string' ? entry.role : 'user';
+      return { role, content };
+    })
+    .filter(Boolean);
+}
+
+function formatEntryForModel(entry, language = 'ar') {
+  const content = typeof entry.content === 'string' ? entry.content : '';
+  const attachmentsText = formatAttachmentsForPrompt(entry.attachments, language);
+
+  if (attachmentsText) {
+    const label = language === 'en' ? 'Attachments' : 'المرفقات';
+    if (content) {
+      return `${content}\n\n${label}:\n${attachmentsText}`.trim();
+    }
+    return `${label}:\n${attachmentsText}`.trim();
+  }
+
+  return content;
+}
+
 function formatHistoryForPrompt(history, language = 'ar') {
   const isEnglish = language === 'en';
 
@@ -467,11 +534,20 @@ function mapChatRowToListItem(row, language = 'ar') {
 
   const fallbackSummary = buildFallbackSummary(history, language);
   const summary = pickSummary(row.summary, fallbackSummary);
-  const preview = truncate(pickString(getLastAssistantContent(history)) || summary, 180);
+  const rawTitle =
+    pickString(getFirstUserContent(history)) ||
+    pickString(row.summary) ||
+    fallbackSummary ||
+    (language === 'en' ? 'New conversation' : 'محادثة جديدة');
+  const title = truncate(rawTitle, 120);
+  const preview = truncate(
+    pickString(getLastAssistantContent(history)) || pickString(row.summary) || fallbackSummary,
+    180
+  );
 
   return {
     id: row.id,
-    title: summary,
+    title,
     preview,
     createdAt: row.created_at,
   };
@@ -484,6 +560,21 @@ function getLastAssistantContent(history) {
       return entry.content;
     }
   }
+  return '';
+}
+
+function getFirstUserContent(history) {
+  if (!Array.isArray(history)) {
+    return '';
+  }
+
+  for (let index = 0; index < history.length; index += 1) {
+    const entry = history[index];
+    if (entry.role === 'user' && pickString(entry.content)) {
+      return entry.content;
+    }
+  }
+
   return '';
 }
 
@@ -532,11 +623,14 @@ function mapErrorToClientMessage(error) {
     return fallback;
   }
 
-  if (error.name === 'OllamaError') {
-    const detail = error.details || 'تعذر الاتصال بنموذج Ollama. يرجى التحقق من إعداداته.';
+  if (error && error.name === 'LLMError') {
+    const providerLabel =
+      config.llm.provider === 'allam' ? 'Allam' : 'Ollama';
+    const detail =
+      error.details || `تعذر الاتصال بنموذج ${providerLabel}. يرجى التحقق من إعداداته.`;
     return {
       statusCode: 502,
-      clientMessage: `مشكلة في الاتصال بنموذج Ollama: ${detail}`,
+      clientMessage: `مشكلة في الاتصال بنموذج ${providerLabel}: ${detail}`,
     };
   }
 

@@ -1,4 +1,8 @@
-const BASE_PROMPTS = {
+const dotenv = require('dotenv');
+
+dotenv.config();
+
+const FALLBACK_PROMPTS = {
   ar: `أنت مساعد جامعي سعودي ودود باسم "دليلك الجامعي".
 تتكلم بلهجة نجدية بسيطة ومهذبة.
 تقدم إجابات مختصرة وواضحة حول الدراسة واللوائح الأكاديمية فقط.
@@ -7,6 +11,11 @@ const BASE_PROMPTS = {
 You reply in clear, concise English with a polite Najdi tone.
 Keep answers short, focused on academics and official university services only.
 If you do not have exact information, say politely: "I don't have that information right now, please check the university website."`,
+};
+
+const BASE_PROMPTS = {
+  ar: pickPromptOverride('LLM_SYSTEM_PROMPT_AR') || pickPromptOverride('LLM_SYSTEM_PROMPT') || FALLBACK_PROMPTS.ar,
+  en: pickPromptOverride('LLM_SYSTEM_PROMPT_EN') || pickPromptOverride('LLM_SYSTEM_PROMPT') || FALLBACK_PROMPTS.en,
 };
 
 function buildPrompt({
@@ -61,4 +70,13 @@ function safeJson(value) {
   } catch (error) {
     return null;
   }
+}
+
+function pickPromptOverride(key) {
+  const value = process.env[key];
+  if (typeof value !== 'string') {
+    return '';
+  }
+  const trimmed = value.trim();
+  return trimmed;
 }

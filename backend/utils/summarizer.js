@@ -1,4 +1,4 @@
-const { callOllama } = require('./ollamaClient');
+const { callLLM } = require('./llmClient');
 const { config } = require('../config');
 
 
@@ -24,16 +24,25 @@ async function summarizeConversation(history, language = 'ar') {
 
 
   const isEnglish = language === 'en';
+  const summarySystemPrompt = isEnglish
+    ? 'You are an academic advisor assistant who writes concise English bullet point summaries.'
+    : 'أنت مساعد أكاديمي يلخّص المحادثات في نقاط مختصرة باللغة العربية الفصحى.';
+
   const summaryPrompt = isEnglish
     ? `Summarize the following conversation into short bullet points in clear English. Focus on details that matter to the student (classes, advisors, deadlines).\n\n${conversation}\n\nSummary:`
     : `لخّص المحادثة التالية في نقاط بسيطة باللغة العربية الفصحى مع التركيز على المعلومات المهمة عن الطالب.\n\n${conversation}\n\nالخلاصة:`;
 
 
   try {
-    const response = await callOllama({
-      model: config.ollama.model,
+    const response = await callLLM({
       prompt: summaryPrompt,
-      stream: false,
+      system: summarySystemPrompt,
+      messages: [
+        { role: 'system', content: summarySystemPrompt },
+        { role: 'user', content: conversation },
+      ],
+      temperature: config.llm.temperature,
+      maxOutputTokens: config.llm.maxOutputTokens,
     });
 
     return response.message ?? response.response ?? '';
