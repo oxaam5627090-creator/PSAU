@@ -11,25 +11,42 @@ function pickNumber(value) {
   return Number.isFinite(parsed) ? parsed : undefined;
 }
 
-const llmProvider = process.env.LLM_PROVIDER || 'ollama';
+const llmProvider = (process.env.LLM_PROVIDER || 'ollama').toLowerCase();
 const llmModel =
   process.env.LLM_MODEL ||
   process.env.OLLAMA_MODEL ||
   'llama3.1:8b';
 
+const sharedBaseUrl = process.env.LLM_BASE_URL || '';
+const ollamaBaseUrl = process.env.OLLAMA_HOST || 'http://localhost:11434';
+const allamBaseUrl = process.env.ALLAM_BASE_URL || 'https://api.allam.world';
+const apiKey = process.env.LLM_API_KEY || process.env.ALLAM_API_KEY || '';
+
 const llmConfig = {
   provider: llmProvider,
   model: llmModel,
-  baseUrl: process.env.LLM_BASE_URL || process.env.OLLAMA_HOST || 'http://localhost:11434',
-  apiKey: process.env.LLM_API_KEY || process.env.ALLAM_API_KEY || '',
+  baseUrl: sharedBaseUrl || ollamaBaseUrl,
+  apiKey,
   temperature: pickNumber(process.env.LLM_TEMPERATURE),
   maxOutputTokens: pickNumber(process.env.LLM_MAX_OUTPUT_TOKENS),
   topP: pickNumber(process.env.LLM_TOP_P),
+  transport: 'ollama',
 };
 
 if (llmProvider === 'allam') {
-  llmConfig.baseUrl =
-    process.env.LLM_BASE_URL || process.env.ALLAM_BASE_URL || 'https://api.allam.world';
+  const explicitBaseUrl = sharedBaseUrl || process.env.ALLAM_BASE_URL || '';
+  const wantsRemoteApi = Boolean(apiKey) || /allam\.(world|ai)/i.test(explicitBaseUrl);
+
+  if (wantsRemoteApi) {
+    llmConfig.baseUrl = explicitBaseUrl || allamBaseUrl;
+    llmConfig.transport = 'allam';
+  } else {
+    llmConfig.baseUrl = explicitBaseUrl || ollamaBaseUrl;
+    llmConfig.transport = 'ollama';
+  }
+} else {
+  llmConfig.baseUrl = sharedBaseUrl || ollamaBaseUrl;
+  llmConfig.transport = 'ollama';
 }
 
 const config = {

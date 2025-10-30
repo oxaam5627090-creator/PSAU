@@ -67,6 +67,30 @@ function normalizeBaseUrl(url) {
   return url.endsWith('/') ? url.slice(0, -1) : url;
 }
 
+function resolveTransport() {
+  const provider = (config.llm?.provider || 'ollama').toLowerCase();
+  const transport = (config.llm?.transport || '').toLowerCase();
+
+  if (provider === 'allam') {
+    if (transport === 'allam' || transport === 'ollama') {
+      return transport;
+    }
+
+    if (config.llm?.apiKey) {
+      return 'allam';
+    }
+
+    const base = normalizeBaseUrl(config.llm?.baseUrl || '');
+    if (/allam\.(world|ai)/i.test(base)) {
+      return 'allam';
+    }
+
+    return 'ollama';
+  }
+
+  return 'ollama';
+}
+
 function pickNumber(value) {
   if (value === undefined || value === null || value === '') {
     return undefined;
@@ -390,9 +414,15 @@ function flushSseBuffer(buffer, handlePayload, isFinal) {
 }
 
 async function callLLM(body = {}) {
-  const provider = config.llm.provider || 'ollama';
+  const provider = (config.llm.provider || 'ollama').toLowerCase();
   if (provider === 'allam') {
-    return callAllam(body);
+    const transport = resolveTransport();
+    if (transport === 'allam') {
+      return callAllam(body);
+    }
+    if (transport === 'ollama') {
+      return callOllama(body);
+    }
   }
 
   if (provider === 'ollama') {
@@ -403,9 +433,15 @@ async function callLLM(body = {}) {
 }
 
 async function streamLLM(body = {}, onEvent) {
-  const provider = config.llm.provider || 'ollama';
+  const provider = (config.llm.provider || 'ollama').toLowerCase();
   if (provider === 'allam') {
-    return streamAllam(body, onEvent);
+    const transport = resolveTransport();
+    if (transport === 'allam') {
+      return streamAllam(body, onEvent);
+    }
+    if (transport === 'ollama') {
+      return streamOllama(body, onEvent);
+    }
   }
 
   if (provider === 'ollama') {

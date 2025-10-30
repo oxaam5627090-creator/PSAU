@@ -275,6 +275,7 @@ If you prefer to keep the backend tooling inside Ubuntu on WSL, follow the origi
    LLM_BASE_URL=https://api.allam.world
    LLM_API_KEY=your-api-key
    ```
+   To run the Allam models distributed through Ollama instead of the hosted API, set `LLM_PROVIDER=allam` and keep the base URL pointing to your Ollama host (defaults to `http://localhost:11434`). Leave `LLM_API_KEY` empty when running locally.
 
 8. **Install backend dependencies** inside WSL:
    ```bash
