@@ -1,7 +1,7 @@
 const path = require('path');
 const fs = require('fs/promises');
 const { pool } = require('../db');
-const { extractTextFromFile } = require('../utils/fileExtractor');
+const { extractTextFromFile, ExtractionError } = require('../utils/fileExtractor');
 
 async function handleUpload(req, res) {
   try {
@@ -34,6 +34,9 @@ async function handleUpload(req, res) {
     });
   } catch (error) {
     console.error('handleUpload error', error);
+    if (error instanceof ExtractionError) {
+      return res.status(422).json({ message: error.message });
+    }
     return res.status(500).json({ message: 'Internal server error' });
   }
 }

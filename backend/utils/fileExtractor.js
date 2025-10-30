@@ -3,6 +3,37 @@ const path = require('path');
 
 const extractorScript = path.resolve(__dirname, 'text_extractor.py');
 
+class ExtractionError extends Error {
+  constructor(message, exitCode, details) {
+    super(message || 'Failed to extract text');
+    this.name = 'ExtractionError';
+    this.exitCode = exitCode;
+    this.details = details;
+  }
+}
+
+function parseExtractorError(output) {
+  if (!output) {
+    return '';
+  }
+
+  const trimmed = output.toString().trim();
+  if (!trimmed) {
+    return '';
+  }
+
+  try {
+    const parsed = JSON.parse(trimmed);
+    if (parsed && typeof parsed.error === 'string') {
+      return parsed.error;
+    }
+  } catch (error) {
+    // Ignore JSON parse errors and fall back to the raw trimmed message.
+  }
+
+  return trimmed;
+}
+
 function extractTextFromFile(filePath, extension) {
   return new Promise((resolve, reject) => {
     const process = spawn('python', [extractorScript, filePath, extension]);
@@ -19,12 +50,14 @@ function extractTextFromFile(filePath, extension) {
 
     process.on('close', (code) => {
       if (code !== 0) {
-        console.error('extractTextFromFile error', err);
-        return reject(new Error('Failed to extract text'));
+        const details = parseExtractorError(err || data);
+        const message = details || 'Failed to extract text';
+        console.error('extractTextFromFile error', message);
+        return reject(new ExtractionError(message, code, details));
       }
       resolve(data.trim());
     });
   });
 }
 
-module.exports = { extractTextFromFile };
+module.exports = { extractTextFromFile, ExtractionError };
