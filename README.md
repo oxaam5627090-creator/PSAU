@@ -82,9 +82,10 @@ You can run the full stack directly on Windows 11 without installing Ubuntu/WSL.
     - Backend: http://localhost:4000
     - Frontend (Vite dev server): http://localhost:5173
 
-11. **Confirm Ollama/LM Studio connectivity**
-    - Ollama for Windows automatically exposes `http://localhost:11434`.
-    - For LM Studio, enable the local server and copy its URL into `.env` (`OLLAMA_HOST`).
+11. **Confirm LLM connectivity**
+    - For Ollama, ensure it exposes `http://localhost:11434` (default) or update `.env` (`LLM_BASE_URL`).
+    - For LM Studio, enable the local server and copy its URL into `.env`.
+    - For cloud APIs such as Allam, provide the HTTPS endpoint in `.env` and set `LLM_API_KEY`.
 
 12. **Log in and test streaming chat**
     - Seed a user account in MySQL (create a user row manually or via your own SQL script) or register via API.
@@ -93,7 +94,7 @@ You can run the full stack directly on Windows 11 without installing Ubuntu/WSL.
 ## Backend Overview
 
 * **Authentication** via JWT (student ID + password).
-* **Chat orchestration** integrates student memory, university schedule, and Ollama responses.
+* **Chat orchestration** integrates student memory, university schedule, and LLM responses (Ollama, Allam, etc.).
 * **File uploads** (PDF, DOCX, PPT/PPTX, images) up to 2.5 MB, routed to a Python extractor that uses LangChain loaders and Tesseract OCR.
 * **Personalization** stores per-user summaries and facts, refreshing the system prompt each turn.
 * **Admin dashboard** exposes aggregate counts, latest uploads, and potential fine-tuning sources.
@@ -104,7 +105,7 @@ Key entry points:
 * `backend/server.js` – Express server bootstrap
 * `backend/routes/*.js` – Auth, chat, uploads, admin endpoints
 * `backend/controllers/*.js` – Business logic for each route group
-* `backend/utils/` – Ollama client, prompt builder, summarizer, file extractor, JWT middleware
+* `backend/utils/` – LLM client, prompt builder, summarizer, file extractor, JWT middleware
 * `backend/utils/text_extractor.py` – LangChain/Tesseract-powered document parsing utility
 
 Install dependencies with the Windows instructions above or manually:
@@ -168,7 +169,7 @@ accelerate launch scripts/finetune.py \
   --output_dir ./models/fine_tuned
 ```
 
-5. After training, update Ollama/LM Studio to reference the fine-tuned weights and adjust `OLLAMA_MODEL` in `.env`.
+5. After training, update your serving stack (Ollama/LM Studio/Allam) to reference the fine-tuned weights and adjust `LLM_MODEL` in `.env`.
 
 ### scripts/finetune.py
 
@@ -182,14 +183,14 @@ Modify `backend/utils/promptBuilder.js` to tweak tone or inject additional conte
 
 1. Stop the backend server.
 2. Update Ollama (or LM Studio) with the new model tag or weights.
-3. Edit `.env` → `OLLAMA_MODEL` and restart `npm run dev` (backend) to pick up the change.
+3. Edit `.env` → `LLM_MODEL` (and `LLM_PROVIDER` if needed) then restart `npm run dev` (backend) to pick up the change.
 
 ## Deployment Notes
 
 * Designed for Windows 11; WSL is optional and no longer required for the Node.js stack.
 * GPU inference via Ollama or LM Studio using GTX 1080 Ti and 24 GB RAM; expect ~1–3 s per response with quantized 3B–7B models.
 * For LAN/public access, configure reverse proxy (e.g., Caddy/NGINX) and HTTPS certificates.
-* Optional Bing/Serper web search can be toggled by `ENABLE_WEB_SEARCH=true` and providing an API key; integrate the logic in `backend/utils/ollamaClient.js` or dedicated module.
+* Optional Bing/Serper web search can be toggled by `ENABLE_WEB_SEARCH=true` and providing an API key; integrate the logic in `backend/utils/llmClient.js` or a dedicated module.
 
 ## Cron-Based File Retention
 
@@ -198,6 +199,14 @@ Modify `backend/utils/promptBuilder.js` to tweak tone or inject additional conte
 ## Environment Configuration
 
 Duplicate `.env.example` → `.env` and adjust credentials. Default upload path (`backend/uploads`) is relative to repo root.
+
+Key LLM variables:
+
+* `LLM_PROVIDER` – `ollama` (default) or `allam`
+* `LLM_MODEL` – model identifier/tag for the selected provider
+* `LLM_BASE_URL` – HTTP endpoint for the provider (e.g., `http://localhost:11434` or `https://api.allam.world`)
+* `LLM_API_KEY` – required for authenticated providers such as Allam
+* Optional tuning knobs: `LLM_TEMPERATURE`, `LLM_MAX_OUTPUT_TOKENS`, `LLM_TOP_P`
 
 
 ## Optional: Windows 11 with WSL
@@ -242,22 +251,31 @@ If you prefer to keep the backend tooling inside Ubuntu on WSL, follow the origi
    mysql -u <user> -p < database/schema.sql
    ```
 
-6. **Install Ollama or LM Studio on Windows** (outside of WSL) and download a compatible quantized model such as `llama3.2:3b-instruct-q4_0` or `mistral:7b-instruct-q4`. Ensure the service listens on `http://localhost:11434` (default for Ollama). If you run LM Studio instead, note the server URL and update `.env` accordingly.
+6. **Install your preferred inference backend** (Ollama, LM Studio, or connect to an Allam endpoint) and download a compatible quantized model such as `llama3.2:3b-instruct-q4_0` or `mistral:7b-instruct-q4`. Ensure the service listens on `http://localhost:11434` (default for Ollama) or record the HTTPS endpoint for remote providers.
 
 7. **Create and configure the environment file**:
    ```bash
    cp .env.example .env
    nano .env
    ```
-   Set database credentials, JWT secret, upload directory, and the Ollama host/model. Example values:
+   Set database credentials, JWT secret, upload directory, and the LLM provider settings. Example values for Ollama:
    ```dotenv
-   OLLAMA_HOST=http://localhost:11434
-   OLLAMA_MODEL=llama3.2:3b-instruct-q4_0
+   LLM_PROVIDER=ollama
+   LLM_MODEL=llama3.2:3b-instruct-q4_0
+   LLM_BASE_URL=http://localhost:11434
    DB_HOST=127.0.0.1
    DB_USER=wsldbuser
    DB_PASSWORD=super-secret
    DB_NAME=saudi_assistant
    ```
+   For Allam (cloud):
+   ```dotenv
+   LLM_PROVIDER=allam
+   LLM_MODEL=allam-1-13b-instruct
+   LLM_BASE_URL=https://api.allam.world
+   LLM_API_KEY=your-api-key
+   ```
+   To run the Allam models distributed through Ollama instead of the hosted API, set `LLM_PROVIDER=allam` and keep the base URL pointing to your Ollama host (defaults to `http://localhost:11434`). Leave `LLM_API_KEY` empty when running locally.
 
 8. **Install backend dependencies** inside WSL:
    ```bash

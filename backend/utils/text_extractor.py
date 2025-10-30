@@ -71,7 +71,7 @@ def main():
         else:
             content = file_path.read_text(encoding='utf-8', errors='ignore')
     except Exception as error:  # pylint: disable=broad-except
-        print(json.dumps({'error': str(error)}))
+        print(json.dumps({'error': str(error)}), file=sys.stderr)
         sys.exit(1)
 
     print(content)
