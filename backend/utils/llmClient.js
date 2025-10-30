@@ -100,27 +100,39 @@ function pickNumber(value) {
   return Number.isFinite(parsed) ? parsed : undefined;
 }
 
-function createOllamaRequestBody(body = {}, { stream }) {
+function hasOllamaMessages(body = {}) {
+  return Array.isArray(body.messages) && body.messages.length > 0;
+}
+
+function createOllamaRequestBody(body = {}, { stream, endpoint }) {
   const requestBody = {
     model: body.model || config.llm.model,
-    prompt: body.prompt || '',
     stream,
   };
 
-  if (body.format) {
-    requestBody.format = body.format;
-  }
+  if (endpoint === 'chat') {
+    requestBody.messages = (body.messages || []).map((message) => ({
+      role: message.role || 'user',
+      content: typeof message.content === 'string' ? message.content : '',
+    }));
+  } else {
+    requestBody.prompt = body.prompt || '';
 
-  if (Array.isArray(body.images) && body.images.length > 0) {
-    requestBody.images = body.images;
-  }
+    if (body.format) {
+      requestBody.format = body.format;
+    }
 
-  if (body.keep_alive !== undefined) {
-    requestBody.keep_alive = body.keep_alive;
-  }
+    if (Array.isArray(body.images) && body.images.length > 0) {
+      requestBody.images = body.images;
+    }
 
-  if (body.context) {
-    requestBody.context = body.context;
+    if (body.keep_alive !== undefined) {
+      requestBody.keep_alive = body.keep_alive;
+    }
+
+    if (body.context) {
+      requestBody.context = body.context;
+    }
   }
 
   const options = { ...(body.options || {}) };
@@ -146,6 +158,26 @@ function createOllamaRequestBody(body = {}, { stream }) {
   }
 
   return requestBody;
+}
+
+function extractOllamaResponse(data) {
+  if (!data) {
+    return '';
+  }
+
+  if (typeof data.response === 'string') {
+    return data.response;
+  }
+
+  if (data.message && typeof data.message.content === 'string') {
+    return data.message.content;
+  }
+
+  if (typeof data.text === 'string') {
+    return data.text;
+  }
+
+  return '';
 }
 
 function buildAllamMessages(body = {}) {
@@ -227,9 +259,11 @@ function extractAllamResponse(data) {
 async function callOllama(body = {}) {
   const fetch = await getFetch();
   const baseUrl = normalizeBaseUrl(config.llm.baseUrl || 'http://localhost:11434');
-  const requestBody = createOllamaRequestBody(body, { stream: false });
+  const hasMessages = hasOllamaMessages(body);
+  const endpoint = hasMessages ? 'chat' : 'generate';
+  const requestBody = createOllamaRequestBody(body, { stream: false, endpoint });
 
-  const response = await fetch(`${baseUrl}/api/generate`, {
+  const response = await fetch(`${baseUrl}/api/${endpoint}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(requestBody),
@@ -241,15 +275,18 @@ async function callOllama(body = {}) {
   }
 
   const data = await response.json();
-  return data;
+  const text = extractOllamaResponse(data);
+  return { response: text, message: text, raw: data };
 }
 
 async function streamOllama(body = {}, onEvent) {
   const fetch = await getFetch();
   const baseUrl = normalizeBaseUrl(config.llm.baseUrl || 'http://localhost:11434');
-  const requestBody = createOllamaRequestBody(body, { stream: true });
+  const hasMessages = hasOllamaMessages(body);
+  const endpoint = hasMessages ? 'chat' : 'generate';
+  const requestBody = createOllamaRequestBody(body, { stream: true, endpoint });
 
-  const response = await fetch(`${baseUrl}/api/generate`, {
+  const response = await fetch(`${baseUrl}/api/${endpoint}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(requestBody),
@@ -260,22 +297,29 @@ async function streamOllama(body = {}, onEvent) {
     throw new LLMError(response.status, extractErrorDetails(text));
   }
 
-  await parseSseStream(response, (payloadText) => {
-    if (payloadText === '[DONE]') {
-      onEvent({ done: true });
-      return;
-    }
-
-    if (!/^[\[{]/.test(payloadText)) {
-      console.warn('Ignoring non-JSON Ollama SSE payload:', payloadText);
-      return;
-    }
-
+  await parseNdjsonStream(response, (payloadText) => {
     try {
       const parsed = JSON.parse(payloadText);
-      onEvent(parsed);
+
+      if (parsed.done) {
+        onEvent({ done: true });
+        return;
+      }
+
+      if (typeof parsed.response === 'string' && parsed.response) {
+        onEvent({ response: parsed.response });
+        return;
+      }
+
+      if (
+        parsed.message &&
+        typeof parsed.message.content === 'string' &&
+        parsed.message.content
+      ) {
+        onEvent({ response: parsed.message.content });
+      }
     } catch (error) {
-      console.warn('Ignoring malformed Ollama SSE payload:', payloadText, error);
+      console.warn('Ignoring malformed Ollama stream payload:', payloadText, error);
     }
   });
 }
@@ -411,6 +455,47 @@ function flushSseBuffer(buffer, handlePayload, isFinal) {
   }
 
   return remainder;
+}
+
+async function parseNdjsonStream(response, handlePayload) {
+  let buffer = '';
+
+  for await (const chunk of response.body) {
+    buffer += chunk.toString();
+    buffer = flushNdjsonBuffer(buffer, handlePayload, false);
+  }
+
+  flushNdjsonBuffer(buffer, handlePayload, true);
+}
+
+function flushNdjsonBuffer(buffer, handlePayload, isFinal) {
+  let working = buffer;
+
+  while (true) {
+    const newlineIndex = working.indexOf('\n');
+    if (newlineIndex === -1) {
+      break;
+    }
+
+    const line = working.slice(0, newlineIndex).trim();
+    working = working.slice(newlineIndex + 1);
+
+    if (!line) {
+      continue;
+    }
+
+    handlePayload(line);
+  }
+
+  if (isFinal) {
+    const finalLine = working.trim();
+    if (finalLine) {
+      handlePayload(finalLine);
+    }
+    return '';
+  }
+
+  return working;
 }
 
 async function callLLM(body = {}) {
